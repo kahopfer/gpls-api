@@ -8,18 +8,14 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-///**
-// * Created by stephan on 20.03.16.
-// */
-//@Document(collection = "user")
+
 //@Repository
-//@RepositoryRestResource(exported = false)
-//public interface UserRepository {
-//    Optional<User> findByUsername(String username);
+//public interface UserRepository extends MongoRepository<User, String> {
+//    User findByUsername(String username);
 //}
-@Repository
-public interface UserRepository extends MongoRepository<User, String> {
-    User findByUsername(String username);
+
+public interface UserRepository {
+    Optional<User> findByUsername(String username);
 }
 
 
