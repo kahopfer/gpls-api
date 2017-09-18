@@ -1,7 +1,7 @@
-package com.designteam1.security.service;
+package com.designteam1.service;
 
-import com.designteam1.model.security.User;
-import com.designteam1.security.repository.UserRepository;
+import com.designteam1.model.User;
+import com.designteam1.repository.UserRepository;
 import com.designteam1.security.JwtUserFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;

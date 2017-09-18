@@ -1,6 +1,6 @@
-package com.designteam1.security.repository;
+package com.designteam1.repository;
 
-import com.designteam1.model.security.User;
+import com.designteam1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -20,7 +20,6 @@ public class UserRepositoryMongo implements UserRepository {
     @Override
     public Optional<User> findByUsername(String username) {
         final Query query = new Query().addCriteria(Criteria.where("username").is(username));
-        System.out.println(query.toString());
         List<User> userList = mt.find(query, User.class, collectionName);
         return userList.stream().findFirst();
     }

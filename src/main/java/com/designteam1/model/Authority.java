@@ -1,4 +1,4 @@
-package com.designteam1.model.security;
+package com.designteam1.model;
 
 public class Authority {
     private AuthorityName name;

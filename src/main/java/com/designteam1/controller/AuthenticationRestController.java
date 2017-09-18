@@ -1,19 +1,15 @@
-package com.designteam1.security.controller;
+package com.designteam1.controller;
 
 import com.designteam1.security.JwtAuthenticationRequest;
 import com.designteam1.security.JwtTokenUtil;
 import com.designteam1.security.JwtUser;
-import com.designteam1.security.service.JwtAuthenticationResponse;
+import com.designteam1.service.JwtAuthenticationResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mobile.device.Device;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;

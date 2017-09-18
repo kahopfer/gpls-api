@@ -1,4 +1,4 @@
-package com.designteam1.model.security;
+package com.designteam1.model;
 
 public enum AuthorityName {
     ROLE_USER, ROLE_ADMIN

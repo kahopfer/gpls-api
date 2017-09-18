@@ -1,7 +1,7 @@
 package com.designteam1.security;
 
-import com.designteam1.model.security.Authority;
-import com.designteam1.model.security.User;
+import com.designteam1.model.Authority;
+import com.designteam1.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
