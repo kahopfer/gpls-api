@@ -1,6 +1,6 @@
 package com.designteam1.security;
 
-import com.designteam1.model.Authority;
+import com.designteam1.model.AuthorityName;
 import com.designteam1.model.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -19,17 +19,15 @@ public final class JwtUserFactory {
                 user.getUsername(),
                 user.getFirstname(),
                 user.getLastname(),
-                user.getEmail(),
                 user.getPassword(),
                 mapToGrantedAuthorities(user.getAuthorities()),
-                user.getEnabled(),
                 user.getLastPasswordResetDate()
         );
     }
 
-    private static List<GrantedAuthority> mapToGrantedAuthorities(List<Authority> authorities) {
+    private static List<GrantedAuthority> mapToGrantedAuthorities(List<AuthorityName> authorities) {
         return authorities.stream()
-                .map(authority -> new SimpleGrantedAuthority(authority.getName().name()))
+                .map(authority -> new SimpleGrantedAuthority(authority.name()))
                 .collect(Collectors.toList());
     }
 }

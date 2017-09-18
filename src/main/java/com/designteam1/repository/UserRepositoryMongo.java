@@ -23,4 +23,21 @@ public class UserRepositoryMongo implements UserRepository {
         List<User> userList = mt.find(query, User.class, collectionName);
         return userList.stream().findFirst();
     }
+
+    @Override
+    public User createUser(User user) {
+        user.setId(null);
+        mt.save(user, collectionName);
+        return user;
+    }
+
+    @Override
+    public User updateUser(String id, User user) {
+        return null;
+    }
+
+    @Override
+    public User deleteUser(User user) {
+        return null;
+    }
 }

@@ -1,0 +1,58 @@
+package com.designteam1.controller;
+
+import com.designteam1.model.User;
+import com.designteam1.repository.UserRepository;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Date;
+
+@CrossOrigin
+@RestController
+@RequestMapping("user")
+public class UserController {
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    public UserController() {
+
+    }
+
+    public UserController(final UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> createUser(@RequestBody final User user) {
+        try {
+            if (user == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword()) ||
+                    StringUtils.isBlank(user.getFirstname()) || StringUtils.isBlank(user.getLastname()) || user.getAuthorities() == null || user.getAuthorities().isEmpty()) {
+                logger.error("Error in 'createUser': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                user.setLastPasswordResetDate(new Date());
+                User user1 = userRepository.createUser(user);
+                if(user1 == null || user1.getId() == null) {
+                    logger.error("Error in 'createUser': error creating user");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    HttpHeaders header = new HttpHeaders();
+                    header.add("location", user1.getId());
+                    return new ResponseEntity<User>(null, header, HttpStatus.CREATED);
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'createUser', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+}

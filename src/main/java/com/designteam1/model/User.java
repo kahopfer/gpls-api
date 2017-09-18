@@ -31,16 +31,9 @@ public class User {
     private String lastname;
 
     @NotNull
-    @Size(min = 4, max = 50)
-    private String email;
-
-    @NotNull
-    private Boolean enabled;
-
-    @NotNull
     private Date lastPasswordResetDate;
 
-    private List<Authority> authorities;
+    private List<AuthorityName> authorities;
 
     public String getUsername() {
         return username;
@@ -74,22 +67,6 @@ public class User {
         this.lastname = lastname;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
-    }
-
     public Date getLastPasswordResetDate() {
         return lastPasswordResetDate;
     }
@@ -98,19 +75,19 @@ public class User {
         this.lastPasswordResetDate = lastPasswordResetDate;
     }
 
-    public List<Authority> getAuthorities() {
-        return authorities;
-    }
-
-    public void setAuthorities(List<Authority> authorities) {
-        this.authorities = authorities;
-    }
-
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public List<AuthorityName> getAuthorities() {
+        return authorities;
+    }
+
+    public void setAuthorities(List<AuthorityName> authorities) {
+        this.authorities = authorities;
     }
 }
