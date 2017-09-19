@@ -12,6 +12,7 @@ import org.springframework.mobile.device.Device;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+
 import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 
@@ -35,7 +36,7 @@ public class AuthenticationRestController {
         final JwtUser userDetails = (JwtUser) userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
 
         //Compare auth request
-        if(authenticationRequest.getPassword().equals(userDetails.getPassword())) {
+        if (authenticationRequest.getPassword().equals(userDetails.getPassword())) {
             final String token = jwtTokenUtil.generateToken(userDetails, device);
 
             // Return the token
@@ -45,7 +46,7 @@ public class AuthenticationRestController {
         }
     }
 
-//    Do not include "bearer" with token
+    //    Do not include "bearer" with token
     @RequestMapping(value = "refresh", method = RequestMethod.GET)
     public ResponseEntity<?> refreshAndGetAuthenticationToken(HttpServletRequest request) {
         String token = request.getHeader(tokenHeader);

@@ -1,6 +1,7 @@
 package com.designteam1.controller;
 
 import com.designteam1.model.User;
+import com.designteam1.model.Users;
 import com.designteam1.repository.UserRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -13,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 
 @CrossOrigin
 @RestController
@@ -31,6 +34,22 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Users> getUsers() {
+        try {
+            final Users users = new Users();
+            final List<User> userList = userRepository.getUsers();
+            if (userList == null) {
+                return ResponseEntity.ok(users);
+            }
+            users.setUsers(userList);
+            return ResponseEntity.ok(users);
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'getUsers', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<User> createUser(@RequestBody final User user) {
         try {
@@ -39,9 +58,15 @@ public class UserController {
                 logger.error("Error in 'createUser': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+                Optional<User> userList = userRepository.findByUsername(user.getUsername());
+                if (userList != null) {
+                    logger.error("Error in 'createUser': username already exists");
+                    return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                }
+
                 user.setLastPasswordResetDate(new Date());
                 User user1 = userRepository.createUser(user);
-                if(user1 == null || user1.getId() == null) {
+                if (user1 == null || user1.getId() == null) {
                     logger.error("Error in 'createUser': error creating user");
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                 } else {

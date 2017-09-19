@@ -12,10 +12,15 @@ import java.util.Optional;
 
 @Repository
 public class UserRepositoryMongo implements UserRepository {
-    private final String collectionName = "user";
+    private final String collectionName = "User";
 
     @Autowired
     private MongoTemplate mt;
+
+    @Override
+    public List<User> getUsers() {
+        return mt.find(new Query(), User.class, collectionName);
+    }
 
     @Override
     public Optional<User> findByUsername(String username) {

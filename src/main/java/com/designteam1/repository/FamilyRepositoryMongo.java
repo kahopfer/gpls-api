@@ -1,6 +1,6 @@
 package com.designteam1.repository;
 
-import com.designteam1.model.Child;
+import com.designteam1.model.Family;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -11,24 +11,21 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class ChildRepositoryMongo implements ChildRepository {
-
-    private final String collectionName = "children";
+public class FamilyRepositoryMongo implements FamilyRepository {
+    private final String collectionName = "Family";
 
     @Autowired
     private MongoTemplate mt;
 
     @Override
-    public List<Child> getChildren() {
-//        Use if need functionality to query by a particular field
-//        Query query = new Query();
-        return mt.find(new Query(), Child.class, collectionName);
+    public List<Family> getFamilies() {
+        return mt.find(new Query(), Family.class, collectionName);
     }
 
     @Override
-    public Optional<Child> getChild(String id) {
+    public Optional<Family> getFamily(String id) {
         final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
-        List<Child> childList = mt.find(query, Child.class, collectionName);
-        return childList.stream().findFirst();
+        List<Family> familyList = mt.find(query, Family.class, collectionName);
+        return familyList.stream().findFirst();
     }
 }

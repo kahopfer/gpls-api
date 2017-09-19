@@ -2,7 +2,7 @@ package com.designteam1.security;
 
 import java.io.Serializable;
 
-public class  JwtAuthenticationRequest implements Serializable {
+public class JwtAuthenticationRequest implements Serializable {
 
     private static final long serialVersionUID = -8445943548965154778L;
 

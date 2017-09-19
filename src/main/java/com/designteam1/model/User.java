@@ -8,7 +8,7 @@ import javax.validation.constraints.Size;
 import java.util.Date;
 import java.util.List;
 
-@Document(collection = "user")
+@Document(collection = "User")
 public class User {
 
     @Id
