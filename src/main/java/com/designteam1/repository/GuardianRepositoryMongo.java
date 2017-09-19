@@ -29,7 +29,6 @@ public class GuardianRepositoryMongo implements GuardianRepository {
             ObjectId objID = new ObjectId(familyUnitID);
             query.addCriteria(Criteria.where("familyUnitID").is(objID));
         }
-        System.out.println(query.toString());
         return mt.find(query, Guardian.class, collectionName);
     }
 

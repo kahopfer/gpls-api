@@ -59,7 +59,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 Optional<User> userList = userRepository.findByUsername(user.getUsername());
-                if (userList != null) {
+                if (userList.isPresent()) {
                     logger.error("Error in 'createUser': username already exists");
                     return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
                 }
