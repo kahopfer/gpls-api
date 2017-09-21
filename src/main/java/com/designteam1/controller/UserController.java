@@ -80,4 +80,29 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @DeleteMapping(value = "/userToDelete/{userToDelete}/myUsername/{myUsername}")
+    public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @PathVariable(name = "myUsername") final String myUsername) {
+        try {
+            Optional<User> user = userRepository.findByUsername(userToDelete);
+            if(user.isPresent() && !userToDelete.equals(myUsername)) {
+                User result = userRepository.deleteUser(user.get());
+                if(result == null) {
+                    logger.error("Error in 'deleteUser': error deleting user");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                }
+            } else if (userToDelete.equals(myUsername)) {
+                logger.error("Error in 'deleteUser': user tried to delete themselves");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                logger.error("Error in 'deleteUser': user is null");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'deleteUser', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

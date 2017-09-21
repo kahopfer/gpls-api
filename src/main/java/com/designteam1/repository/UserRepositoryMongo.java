@@ -43,6 +43,7 @@ public class UserRepositoryMongo implements UserRepository {
 
     @Override
     public User deleteUser(User user) {
-        return null;
+        mt.remove(user, collectionName);
+        return user;
     }
 }
