@@ -10,9 +10,11 @@ public interface UserRepository {
 
     Optional<User> findByUsername(String username);
 
+    Optional<User> getUser(final String id);
+
     User createUser(User user);
 
-    User updateUser(String id, User user);
+    User updateUser(String username, User user);
 
     User deleteUser(User user);
 }

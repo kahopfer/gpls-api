@@ -1,10 +1,12 @@
 package com.designteam1.repository;
 
 import com.designteam1.model.User;
+import com.mongodb.WriteResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -30,6 +32,13 @@ public class UserRepositoryMongo implements UserRepository {
     }
 
     @Override
+    public Optional<User> getUser(String id) {
+        final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+        List<User> userList = mt.find(query, User.class, collectionName);
+        return userList.stream().findFirst();
+    }
+
+    @Override
     public User createUser(User user) {
         user.setId(null);
         mt.save(user, collectionName);
@@ -37,8 +46,19 @@ public class UserRepositoryMongo implements UserRepository {
     }
 
     @Override
-    public User updateUser(String id, User user) {
-        return null;
+    public User updateUser(String username, User user) {
+        final Query query = new Query().addCriteria(Criteria.where("username").is(username));
+        final Update update = new Update();
+
+        update.set("password", user.getPassword());
+
+        final WriteResult result = mt.updateFirst(query, update, User.class, collectionName);
+
+        if (result != null) {
+            return user;
+        } else {
+            return null;
+        }
     }
 
     @Override

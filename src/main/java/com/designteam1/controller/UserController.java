@@ -85,9 +85,9 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @PathVariable(name = "myUsername") final String myUsername) {
         try {
             Optional<User> user = userRepository.findByUsername(userToDelete);
-            if(user.isPresent() && !userToDelete.equals(myUsername)) {
+            if (user.isPresent() && !userToDelete.equals(myUsername)) {
                 User result = userRepository.deleteUser(user.get());
-                if(result == null) {
+                if (result == null) {
                     logger.error("Error in 'deleteUser': error deleting user");
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                 } else {
@@ -102,6 +102,42 @@ public class UserController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteUser', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    //TODO: Make sure this logic is sound
+    @PutMapping(value = "/userToUpdate/{userToUpdate}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> changePassword(@PathVariable(name = "userToUpdate") final String userToUpdate, @RequestHeader("Old-Password") final String oldPassword, @RequestBody final User user) {
+        try {
+//            StringUtils.isBlank(user.getId())
+            if (user == null || userToUpdate == null || oldPassword == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword()) ||
+                    StringUtils.isBlank(user.getFirstname()) || StringUtils.isBlank(user.getLastname()) || user.getAuthorities() == null || user.getAuthorities().isEmpty()) {
+                logger.error("Error in 'createUser': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!userToUpdate.equals(user.getUsername())) {
+                logger.error("Error in 'changePassword': username parameter does not match username in user");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<User> userOptional = userRepository.findByUsername(userToUpdate);
+                if (!userOptional.isPresent()) {
+                    logger.error("Error in 'changePassword': tried to update a user that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else if (!userOptional.get().getPassword().equals(oldPassword)) {
+                    logger.error("Error in 'changePassword': old password was incorrect");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                } else {
+                    User result = userRepository.updateUser(userToUpdate, user);
+                    if (result == null) {
+                        logger.error("Error in 'changePassword': error building user");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'changePassword', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
