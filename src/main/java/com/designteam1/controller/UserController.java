@@ -85,7 +85,7 @@ public class UserController {
         }
     }
 
-    @DeleteMapping(value = "/userToDelete/{userToDelete}")
+    @DeleteMapping(value = "{userToDelete}")
     public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @RequestHeader("Authorization") String authToken) {
         try {
             // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
