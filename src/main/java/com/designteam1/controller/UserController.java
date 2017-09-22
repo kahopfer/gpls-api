@@ -3,6 +3,7 @@ package com.designteam1.controller;
 import com.designteam1.model.User;
 import com.designteam1.model.Users;
 import com.designteam1.repository.UserRepository;
+import com.designteam1.security.JwtTokenUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,9 @@ public class UserController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Users> getUsers() {
@@ -81,9 +85,15 @@ public class UserController {
         }
     }
 
-    @DeleteMapping(value = "/userToDelete/{userToDelete}/myUsername/{myUsername}")
-    public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @PathVariable(name = "myUsername") final String myUsername) {
+    @DeleteMapping(value = "/userToDelete/{userToDelete}")
+    public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @RequestHeader("Authorization") String authToken) {
         try {
+            // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
+            if (authToken.startsWith("Bearer ")) {
+                authToken = authToken.substring(7);
+            }
+            String myUsername = jwtTokenUtil.getUsernameFromToken(authToken);
+
             Optional<User> user = userRepository.findByUsername(userToDelete);
             if (user.isPresent() && !userToDelete.equals(myUsername)) {
                 User result = userRepository.deleteUser(user.get());
@@ -107,17 +117,23 @@ public class UserController {
     }
 
     //TODO: Make sure this logic is sound
-    @PutMapping(value = "/userToUpdate/{userToUpdate}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> changePassword(@PathVariable(name = "userToUpdate") final String userToUpdate, @RequestHeader("Old-Password") final String oldPassword, @RequestBody final User user) {
+    @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> changePassword(@RequestHeader("Old-Password") final String oldPassword,
+                                               @RequestBody final User user, @RequestHeader("Authorization") String authToken) {
         try {
-//            StringUtils.isBlank(user.getId())
-            if (user == null || userToUpdate == null || oldPassword == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword()) ||
-                    StringUtils.isBlank(user.getFirstname()) || StringUtils.isBlank(user.getLastname()) || user.getAuthorities() == null || user.getAuthorities().isEmpty()) {
+            // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
+            if (authToken.startsWith("Bearer ")) {
+                authToken = authToken.substring(7);
+            }
+
+            String userToUpdate = jwtTokenUtil.getUsernameFromToken(authToken);
+
+            if (user == null || oldPassword == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
                 logger.error("Error in 'createUser': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!userToUpdate.equals(user.getUsername())) {
-                logger.error("Error in 'changePassword': username parameter does not match username in user");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                logger.error("Error in 'changePassword': username in auth token does not match username in user");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
             } else {
                 Optional<User> userOptional = userRepository.findByUsername(userToUpdate);
                 if (!userOptional.isPresent()) {
@@ -127,6 +143,7 @@ public class UserController {
                     logger.error("Error in 'changePassword': old password was incorrect");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 } else {
+                    user.setLastPasswordResetDate(new Date());
                     User result = userRepository.updateUser(userToUpdate, user);
                     if (result == null) {
                         logger.error("Error in 'changePassword': error building user");

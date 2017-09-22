@@ -51,6 +51,7 @@ public class UserRepositoryMongo implements UserRepository {
         final Update update = new Update();
 
         update.set("password", user.getPassword());
+        update.set("lastPasswordResetDate", user.getLastPasswordResetDate());
 
         final WriteResult result = mt.updateFirst(query, update, User.class, collectionName);
 
