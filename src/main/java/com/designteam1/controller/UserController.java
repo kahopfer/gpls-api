@@ -129,7 +129,7 @@ public class UserController {
             String userToUpdate = jwtTokenUtil.getUsernameFromToken(authToken);
 
             if (user == null || oldPassword == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
-                logger.error("Error in 'createUser': missing required field");
+                logger.error("Error in 'changePassword': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!userToUpdate.equals(user.getUsername())) {
                 logger.error("Error in 'changePassword': username in auth token does not match username in user");
