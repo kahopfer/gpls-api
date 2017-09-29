@@ -3,9 +3,11 @@ package com.designteam1.controller;
 import com.designteam1.model.Guardian;
 import com.designteam1.model.Guardians;
 import com.designteam1.repository.GuardianRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -62,4 +64,30 @@ public class GuardianController {
         }
     }
 
+    // SecPhone is not required
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Guardian> createGuardian(@RequestBody final Guardian guardian) {
+        try {
+            if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
+                    || StringUtils.isBlank(guardian.getMi()) || StringUtils.isBlank(guardian.getRelationship()) ||
+                    StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                logger.error("Error in 'createGuardian': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Guardian guardian1 = guardianRepository.createGuardian(guardian);
+                if (guardian1 == null || guardian1.get_id() == null) {
+                    logger.error("Error in 'createGuardian': error creating guardian");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    HttpHeaders header = new HttpHeaders();
+                    header.add("location", guardian1.get_id());
+                    return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'createGuardian', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

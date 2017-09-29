@@ -25,8 +25,9 @@ public class StudentRepositoryMongo implements StudentRepository {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
-            ObjectId objID = new ObjectId(familyUnitID);
-            query.addCriteria(Criteria.where("familyUnitID").is(objID));
+//            ObjectId objID = new ObjectId(familyUnitID);
+//            query.addCriteria(Criteria.where("familyUnitID").is(objID));
+            query.addCriteria(Criteria.where("familyUnitID").is(familyUnitID));
         }
         return mt.find(query, Student.class, collectionName);
     }
@@ -36,5 +37,12 @@ public class StudentRepositoryMongo implements StudentRepository {
         final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
         List<Student> studentList = mt.find(query, Student.class, collectionName);
         return studentList.stream().findFirst();
+    }
+
+    @Override
+    public Student createStudent(Student student) {
+//        student.set_id(null);
+        mt.save(student, collectionName);
+        return student;
     }
 }

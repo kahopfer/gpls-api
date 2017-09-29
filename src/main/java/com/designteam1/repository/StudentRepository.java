@@ -10,5 +10,7 @@ public interface StudentRepository {
 
     Optional<Student> getStudent(final String id);
 
-    //TODO: Add create, update, and delete
+    Student createStudent(Student student);
+
+    //TODO: Add update and delete
 }

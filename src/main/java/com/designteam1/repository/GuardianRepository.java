@@ -10,5 +10,7 @@ public interface GuardianRepository {
 
     Optional<Guardian> getGuardian(final String id);
 
-    //TODO: Add Create, Update, and Delete
+    Guardian createGuardian(Guardian guardian);
+
+    //TODO: Add Update and Delete
 }

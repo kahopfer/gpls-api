@@ -1,5 +1,7 @@
 package com.designteam1.model;
 
+import org.bson.types.ObjectId;
+
 import java.util.Date;
 import java.util.List;
 
@@ -10,7 +12,8 @@ public class Student {
     private String mi;
     private Date birthdate;
     //TODO: Maybe create an enum for allergyCode
-    private List<String> allergyCode;
+//    private List<String> allergyCode;
+    private String notes;
     private String familyUnitID;
 
     public String get_id() {
@@ -53,13 +56,13 @@ public class Student {
         this.birthdate = birthdate;
     }
 
-    public List<String> getAllergyCode() {
-        return allergyCode;
-    }
-
-    public void setAllergyCode(List<String> allergyCode) {
-        this.allergyCode = allergyCode;
-    }
+//    public List<String> getAllergyCode() {
+//        return allergyCode;
+//    }
+//
+//    public void setAllergyCode(List<String> allergyCode) {
+//        this.allergyCode = allergyCode;
+//    }
 
     public String getFamilyUnitID() {
         return familyUnitID;
@@ -67,5 +70,13 @@ public class Student {
 
     public void setFamilyUnitID(String familyUnitID) {
         this.familyUnitID = familyUnitID;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

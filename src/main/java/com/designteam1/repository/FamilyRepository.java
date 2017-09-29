@@ -9,4 +9,6 @@ public interface FamilyRepository {
     List<Family> getFamilies();
 
     Optional<Family> getFamily(String id);
+
+    Family createFamily(Family family);
 }

@@ -26,8 +26,10 @@ public class GuardianRepositoryMongo implements GuardianRepository {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
-            ObjectId objID = new ObjectId(familyUnitID);
-            query.addCriteria(Criteria.where("familyUnitID").is(objID));
+            // Inverse these comments if familyUnitID is stored as a String
+//            ObjectId objID = new ObjectId(familyUnitID);
+//            query.addCriteria(Criteria.where("familyUnitID").is(objID));
+            query.addCriteria(Criteria.where("familyUnitID").is(familyUnitID));
         }
         return mt.find(query, Guardian.class, collectionName);
     }
@@ -37,5 +39,12 @@ public class GuardianRepositoryMongo implements GuardianRepository {
         final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
         List<Guardian> guardianList = mt.find(query, Guardian.class, collectionName);
         return guardianList.stream().findFirst();
+    }
+
+    @Override
+    public Guardian createGuardian(Guardian guardian) {
+//        guardian.set_id(null);
+        mt.save(guardian, collectionName);
+        return guardian;
     }
 }

@@ -28,4 +28,11 @@ public class FamilyRepositoryMongo implements FamilyRepository {
         List<Family> familyList = mt.find(query, Family.class, collectionName);
         return familyList.stream().findFirst();
     }
+
+    @Override
+    public Family createFamily(Family family) {
+//        family.set_id(null);
+        mt.save(family, collectionName);
+        return family;
+    }
 }

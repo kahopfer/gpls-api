@@ -3,9 +3,11 @@ package com.designteam1.controller;
 import com.designteam1.model.Student;
 import com.designteam1.model.Students;
 import com.designteam1.repository.StudentRepository;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -58,6 +60,32 @@ public class StudentController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // Notes are not required
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
+        try {
+            if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getBirthdate().toString()) ||
+                    StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                logger.error("Error in 'createStudent': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Student student1 = studentRepository.createStudent(student);
+                if (student1 == null || student1.get_id() == null) {
+                    logger.error("Error in 'createStudent': error creating student");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    HttpHeaders header = new HttpHeaders();
+                    header.add("location", student1.get_id());
+                    return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'createStudent', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
