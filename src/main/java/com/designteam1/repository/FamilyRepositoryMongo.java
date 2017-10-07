@@ -1,10 +1,12 @@
 package com.designteam1.repository;
 
 import com.designteam1.model.Family;
+import com.mongodb.WriteResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,5 +36,29 @@ public class FamilyRepositoryMongo implements FamilyRepository {
 //        family.set_id(null);
         mt.save(family, collectionName);
         return family;
+    }
+
+    @Override
+    public Family deleteFamily(Family family) {
+        mt.remove(family, collectionName);
+        return family;
+    }
+
+    @Override
+    public Family updateFamily(String id, Family family) {
+        final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+        final Update update = new Update();
+
+        update.set("familyName", family.getFamilyName());
+        update.set("students", family.getStudents());
+        update.set("guardians", family.getGuardians());
+
+        final WriteResult result = mt.updateFirst(query, update, Family.class, collectionName);
+
+        if (result != null) {
+            return family;
+        } else {
+            return null;
+        }
     }
 }

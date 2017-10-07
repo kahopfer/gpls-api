@@ -12,5 +12,7 @@ public interface GuardianRepository {
 
     Guardian createGuardian(Guardian guardian);
 
-    //TODO: Add Update and Delete
+    Guardian updateGuardian(String id, Guardian guardian);
+
+    Guardian deleteGuardian(Guardian guardian);
 }

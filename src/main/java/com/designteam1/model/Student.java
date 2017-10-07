@@ -1,18 +1,13 @@
 package com.designteam1.model;
 
-import org.bson.types.ObjectId;
-
 import java.util.Date;
-import java.util.List;
 
 public class Student {
     private String _id;
     private String fname;
     private String lname;
     private String mi;
-    private Date birthdate;
-    //TODO: Maybe create an enum for allergyCode
-//    private List<String> allergyCode;
+//    private Date birthdate;
     private String notes;
     private String familyUnitID;
 
@@ -48,20 +43,12 @@ public class Student {
         this.mi = mi;
     }
 
-    public Date getBirthdate() {
-        return birthdate;
-    }
-
-    public void setBirthdate(Date birthdate) {
-        this.birthdate = birthdate;
-    }
-
-//    public List<String> getAllergyCode() {
-//        return allergyCode;
+//    public Date getBirthdate() {
+//        return birthdate;
 //    }
 //
-//    public void setAllergyCode(List<String> allergyCode) {
-//        this.allergyCode = allergyCode;
+//    public void setBirthdate(Date birthdate) {
+//        this.birthdate = birthdate;
 //    }
 
     public String getFamilyUnitID() {

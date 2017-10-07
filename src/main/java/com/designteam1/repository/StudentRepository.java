@@ -12,5 +12,7 @@ public interface StudentRepository {
 
     Student createStudent(Student student);
 
-    //TODO: Add update and delete
+    Student updateStudent(String id, Student student);
+
+    Student deleteStudent(Student student);
 }

@@ -68,7 +68,7 @@ public class FamilyController {
     public ResponseEntity<Family> createFamily(@RequestBody final Family family) {
         try {
             if (family == null || StringUtils.isBlank(family.getFamilyName()) || family.getGuardians() == null || family.getGuardians().isEmpty() ||
-                    StringUtils.isBlank(family.get_id())|| family.getStudents() == null || family.getStudents().isEmpty()) {
+                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty()) {
                 logger.error("Error in 'createFamily': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -84,6 +84,59 @@ public class FamilyController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createFamily', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Family> updateFamily(@PathVariable(name = "id") final String id, @RequestBody final Family family) {
+        try {
+            if (family == null || id == null || StringUtils.isBlank(family.get_id()) ||
+                    StringUtils.isBlank(family.getFamilyName()) || family.getGuardians() == null || family.getGuardians().isEmpty() ||
+                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty()) {
+                logger.error("Error in 'updateFamily': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(family.get_id())) {
+                logger.error("Error in 'updateFamily': id parameter does not match id in family");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Family> familyOptional = familyRepository.getFamily(id);
+                if (!familyOptional.isPresent()) {
+                    return this.createFamily(family);
+                } else {
+                    Family result = familyRepository.updateFamily(id, family);
+                    if (result == null) {
+                        logger.error("Error in 'updateFamily': error building family");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateFamily', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @DeleteMapping(value = "{id}")
+    public ResponseEntity<Void> deleteFamily(@PathVariable(name = "id") final String id) {
+        try {
+            Optional<Family> family = familyRepository.getFamily(id);
+            if (family.isPresent()) {
+                Family result = familyRepository.deleteFamily(family.get());
+                if (result == null) {
+                    logger.error("Error in 'deleteFamily': error deleting family");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                }
+            } else {
+                logger.error("Error in 'deleteFamily': family is null");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'deleteFamily', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

@@ -11,4 +11,8 @@ public interface FamilyRepository {
     Optional<Family> getFamily(String id);
 
     Family createFamily(Family family);
+
+    Family deleteFamily(Family family);
+
+    Family updateFamily(String id, Family family);
 }

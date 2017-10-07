@@ -1,12 +1,14 @@
 package com.designteam1.repository;
 
 import com.designteam1.model.Guardian;
+import com.mongodb.WriteResult;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,7 +28,6 @@ public class GuardianRepositoryMongo implements GuardianRepository {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
-            // Inverse these comments if familyUnitID is stored as a String
 //            ObjectId objID = new ObjectId(familyUnitID);
 //            query.addCriteria(Criteria.where("familyUnitID").is(objID));
             query.addCriteria(Criteria.where("familyUnitID").is(familyUnitID));
@@ -45,6 +46,35 @@ public class GuardianRepositoryMongo implements GuardianRepository {
     public Guardian createGuardian(Guardian guardian) {
 //        guardian.set_id(null);
         mt.save(guardian, collectionName);
+        return guardian;
+    }
+
+    @Override
+    public Guardian updateGuardian(String id, Guardian guardian) {
+        final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+        final Update update = new Update();
+
+        update.set("fname", guardian.getFname());
+        update.set("lname", guardian.getLname());
+        update.set("mi", guardian.getMi());
+        update.set("relationship", guardian.getRelationship());
+        update.set("primPhone", guardian.getPrimPhone());
+        update.set("secPhone", guardian.getSecPhone());
+        update.set("email", guardian.getEmail());
+        update.set("familyUnitID", guardian.getFamilyUnitID());
+
+        final WriteResult result = mt.updateFirst(query, update, Guardian.class, collectionName);
+
+        if (result != null) {
+            return guardian;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Guardian deleteGuardian(Guardian guardian) {
+        mt.remove(guardian, collectionName);
         return guardian;
     }
 }

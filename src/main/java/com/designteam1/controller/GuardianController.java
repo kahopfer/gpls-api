@@ -90,4 +90,58 @@ public class GuardianController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Guardian> updateGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
+        try {
+            if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
+                    || StringUtils.isBlank(guardian.getMi()) || StringUtils.isBlank(guardian.getRelationship()) ||
+                    StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                logger.error("Error in 'updateGuardian': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(guardian.get_id())) {
+                logger.error("Error in 'updateGuardian': id parameter does not match id in guardian");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Guardian> guardianOptional = guardianRepository.getGuardian(id);
+                if (!guardianOptional.isPresent()) {
+                    return this.createGuardian(guardian);
+                } else {
+                    Guardian result = guardianRepository.updateGuardian(id, guardian);
+                    if (result == null) {
+                        logger.error("Error in 'updateGuardian': error building guardian");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateGuardian', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @DeleteMapping(value = "{id}")
+    public ResponseEntity<Void> deleteGuardian(@PathVariable(name = "id") final String id) {
+        try {
+            Optional<Guardian> guardian = guardianRepository.getGuardian(id);
+            if (guardian.isPresent()) {
+                Guardian result = guardianRepository.deleteGuardian(guardian.get());
+                if (result == null) {
+                    logger.error("Error in 'deleteGuardian': error deleting guardian");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                }
+            } else {
+                logger.error("Error in 'deleteGuardian': guardian is null");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'deleteGuardian', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

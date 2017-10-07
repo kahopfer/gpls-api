@@ -64,13 +64,12 @@ public class StudentController {
         }
     }
 
-    // Notes are not required
+    // Notes and birthdate are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getBirthdate().toString()) ||
-                    StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -86,6 +85,59 @@ public class StudentController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    // Notes and birthdate are not required
+    @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+        try {
+            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                logger.error("Error in 'updateStudent': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(student.get_id())) {
+                logger.error("Error in 'updateStudent': id parameter does not match id in student");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Student> studentOptional = studentRepository.getStudent(id);
+                if (!studentOptional.isPresent()) {
+                    return this.createStudent(student);
+                } else {
+                    Student result = studentRepository.updateStudent(id, student);
+                    if (result == null) {
+                        logger.error("Error in 'updateStudent': error building student");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @DeleteMapping(value = "{id}")
+    public ResponseEntity<Void> deleteStudent(@PathVariable(name = "id") final String id) {
+        try {
+            Optional<Student> student = studentRepository.getStudent(id);
+            if (student.isPresent()) {
+                Student result = studentRepository.deleteStudent(student.get());
+                if (result == null) {
+                    logger.error("Error in 'deleteStudent': error deleting student");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                }
+            } else {
+                logger.error("Error in 'deleteStudent': student is null");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'deleteStudent', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
