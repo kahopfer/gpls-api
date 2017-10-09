@@ -38,7 +38,6 @@ public class UserController {
     @Autowired
     private JwtTokenUtil jwtTokenUtil;
 
-    //TODO: Add route for resetting password. Maybe do users/resetPassword
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Users> getUsers() {
         try {
