@@ -159,4 +159,35 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
+    @PutMapping(value = "resetPassword/{userToUpdate}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<User> resetPassword(@PathVariable(name = "userToUpdate") final String userToUpdate, @RequestBody final User user) {
+        try {
+            if (user == null || userToUpdate == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
+                logger.error("Error in 'resetPassword': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if(!userToUpdate.equals(user.getUsername())) {
+                logger.error("Error in 'resetPassword': username parameter does not match username in user");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<User> userOptional = userRepository.findByUsername(userToUpdate);
+                if (!userOptional.isPresent()) {
+                    logger.error("Error in 'resetPassword': tried to update a user that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else {
+                    user.setLastPasswordResetDate(new Date());
+                    User result = userRepository.updateUser(userToUpdate, user);
+                    if (result == null) {
+                        logger.error("Error in 'resetPassword': error building user");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'resetPassword', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }

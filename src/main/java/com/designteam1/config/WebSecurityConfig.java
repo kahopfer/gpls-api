@@ -63,6 +63,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.DELETE, "/users/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/users/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.GET, "/users/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/users/resetPassword/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/guardians/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/students/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/families/**").access("hasRole('ROLE_ADMIN')")
