@@ -64,12 +64,12 @@ public class GuardianController {
         }
     }
 
-    // SecPhone is not required
+    // SecPhone and middle initial are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardian> createGuardian(@RequestBody final Guardian guardian) {
         try {
             if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
-                    || StringUtils.isBlank(guardian.getMi()) || StringUtils.isBlank(guardian.getRelationship()) ||
+                    || StringUtils.isBlank(guardian.getRelationship()) ||
                     StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
                 logger.error("Error in 'createGuardian': missing required field");
@@ -91,11 +91,12 @@ public class GuardianController {
         }
     }
 
+    // SecPhone and middle initial are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardian> updateGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
         try {
             if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
-                    || StringUtils.isBlank(guardian.getMi()) || StringUtils.isBlank(guardian.getRelationship()) ||
+                    || StringUtils.isBlank(guardian.getRelationship()) ||
                     StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
                 logger.error("Error in 'updateGuardian': missing required field");

@@ -64,12 +64,12 @@ public class StudentController {
         }
     }
 
-    // Notes and birthdate are not required
+    // Notes, middle initial, and birthdate are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -89,12 +89,12 @@ public class StudentController {
         }
     }
 
-    // Notes and birthdate are not required
+    // Notes, middle initial, and birthdate are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getMi()) || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
                 logger.error("Error in 'updateStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(student.get_id())) {
