@@ -9,6 +9,7 @@ public class Student {
     private String mi;
 //    private Date birthdate;
     private String notes;
+    private boolean checkedIn;
     private String familyUnitID;
 
     public String get_id() {
@@ -65,5 +66,13 @@ public class Student {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public boolean isCheckedIn() {
+        return checkedIn;
+    }
+
+    public void setCheckedIn(boolean checkedIn) {
+        this.checkedIn = checkedIn;
     }
 }

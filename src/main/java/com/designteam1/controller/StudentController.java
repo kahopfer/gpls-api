@@ -34,10 +34,11 @@ public class StudentController {
     private StudentRepository studentRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Students> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
+    public ResponseEntity<Students> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
+                                                @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
-            final List<Student> studentList = studentRepository.getStudents(familyUnitID);
+            final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn);
             if (studentList == null) {
                 return ResponseEntity.ok(students);
             }
@@ -69,7 +70,8 @@ public class StudentController {
     public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
+                    || StringUtils.isBlank(student.get_id())) {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -89,8 +91,8 @@ public class StudentController {
         }
     }
 
-    // Notes, middle initial, and birthdate are not required
-    @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    // Notes, middle initial, checkedIn, and birthdate are not required
+    @PutMapping(value = "updateStudent/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
@@ -116,6 +118,36 @@ public class StudentController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Student> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+        try {
+            if (student == null || id == null || StringUtils.isBlank(String.valueOf(student.isCheckedIn())) || StringUtils.isBlank(student.get_id())) {
+                logger.error("Error in 'updateCheckedIn': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(student.get_id())) {
+                logger.error("Error in 'updateCheckedIn': id parameter does not match id in student");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Student> studentOptional = studentRepository.getStudent(id);
+                if (!studentOptional.isPresent()) {
+                    logger.error("Error in 'updateCheckedIn': tried to check in/out a student that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else {
+                    Student result = studentRepository.updateCheckedIn(id, student);
+                    if (result == null) {
+                        logger.error("Error in 'updateCheckedIn': error building student");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateCheckedIn', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

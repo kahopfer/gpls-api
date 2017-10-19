@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface StudentRepository {
-    List<Student> getStudents(final String FamilyUnitID);
+    List<Student> getStudents(final String FamilyUnitID, final String checkedIn);
 
     Optional<Student> getStudent(final String id);
 
@@ -15,4 +15,6 @@ public interface StudentRepository {
     Student updateStudent(String id, Student student);
 
     Student deleteStudent(Student student);
+
+    Student updateCheckedIn(String id, Student student);
 }
