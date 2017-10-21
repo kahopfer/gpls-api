@@ -73,6 +73,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.DELETE, "/guardians/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/students/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/families/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.DELETE, "/lineItems/**").access("hasRole('ROLE_ADMIN')")
                 .anyRequest().authenticated();
 
         // Custom JWT based security filter
