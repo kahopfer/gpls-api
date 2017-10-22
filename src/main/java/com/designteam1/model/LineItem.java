@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.List;
 
 public class LineItem {
+    // TODO: Maybe store student name as well
     private String _id;
     private String familyID;
     private String studentID;
