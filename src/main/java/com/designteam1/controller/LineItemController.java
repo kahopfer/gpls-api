@@ -72,9 +72,12 @@ public class LineItemController {
         try {
             if (lineItem == null || id == null || StringUtils.isBlank(lineItem.get_id())
                     || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID())
-                    || StringUtils.isBlank(lineItem.getCheckIn().toString()) || StringUtils.isBlank(lineItem.getCheckOut().toString())
+                    || lineItem.getCheckIn() == null || lineItem.getCheckOut() == null
                     || StringUtils.isBlank(lineItem.getCheckInBy()) || StringUtils.isBlank(lineItem.getCheckOutBy())) {
                 logger.error("Error in 'updateLineItem': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (lineItem.getCheckIn().after(lineItem.getCheckOut())) {
+                logger.error("Error in 'updateLineItem': check in time is later than check out time");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(lineItem.get_id())) {
                 logger.error("Error in 'updateLineItem': id parameter does not match id in lineItem");
@@ -104,8 +107,11 @@ public class LineItemController {
     public ResponseEntity<LineItem> createLineItem(@RequestBody final LineItem lineItem) {
         try {
             if (lineItem == null || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID())
-                    || StringUtils.isBlank(lineItem.getCheckIn().toString()) || StringUtils.isBlank(lineItem.getCheckInBy())) {
+                    || lineItem.getCheckIn() == null || StringUtils.isBlank(lineItem.getCheckInBy())) {
                 logger.error("Error in 'createLineItem': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (lineItem.getCheckOut() != null && lineItem.getCheckIn().after(lineItem.getCheckOut())) {
+                logger.error("Error in 'updateLineItem': check in time is later than check out time");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
