@@ -1,5 +1,8 @@
 package com.designteam1.model;
 
+import org.bson.types.Decimal128;
+
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -12,8 +15,8 @@ public class LineItem {
     private Date checkOut;
 //    private String serviceType;
     private List<ExtraItem> extraItems;
-    private double earlyInLateOutFee;
-    private double lineTotalCost;
+    private Decimal128 earlyInLateOutFee;
+    private Decimal128 lineTotalCost;
     private String checkInBy;
     private String checkOutBy;
     private String notes;
@@ -75,20 +78,20 @@ public class LineItem {
         this.extraItems = extraItems;
     }
 
-    public double getEarlyInLateOutFee() {
-        return earlyInLateOutFee;
+    public BigDecimal getEarlyInLateOutFee() {
+        return earlyInLateOutFee.bigDecimalValue();
     }
 
-    public void setEarlyInLateOutFee(double earlyInLateOutFee) {
-        this.earlyInLateOutFee = earlyInLateOutFee;
+    public void setEarlyInLateOutFee(BigDecimal earlyInLateOutFee) {
+        this.earlyInLateOutFee = new Decimal128(earlyInLateOutFee);
     }
 
-    public double getLineTotalCost() {
-        return lineTotalCost;
+    public BigDecimal getLineTotalCost() {
+        return lineTotalCost.bigDecimalValue();
     }
 
-    public void setLineTotalCost(double lineTotalCost) {
-        this.lineTotalCost = lineTotalCost;
+    public void setLineTotalCost(BigDecimal lineTotalCost) {
+        this.lineTotalCost = new Decimal128(lineTotalCost);
     }
 
     public String getCheckInBy() {

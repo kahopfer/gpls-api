@@ -36,10 +36,11 @@ public class LineItemController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItems> getLineItems(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
                                                   @RequestParam(value = "studentID", defaultValue = "", required = false) final String studentID,
-                                                  @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut) {
+                                                  @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
+                                                  @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced) {
         try {
             final LineItems lineItems = new LineItems();
-            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut);
+            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced);
             if (lineItemList == null) {
                 return ResponseEntity.ok(lineItems);
             }

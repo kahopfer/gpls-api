@@ -1,8 +1,12 @@
 package com.designteam1.model;
 
+import org.bson.types.Decimal128;
+
+import java.math.BigDecimal;
+
 public class ExtraItem {
     private String itemName;
-    private String itemValue;
+    private Decimal128 itemValue;
 
     public String getItemName() {
         return itemName;
@@ -12,11 +16,11 @@ public class ExtraItem {
         this.itemName = itemName;
     }
 
-    public String getItemValue() {
-        return itemValue;
+    public BigDecimal getItemValue() {
+        return itemValue.bigDecimalValue();
     }
 
-    public void setItemValue(String itemValue) {
-        this.itemValue = itemValue;
+    public void setItemValue(BigDecimal itemValue) {
+        this.itemValue = new Decimal128(itemValue);
     }
 }

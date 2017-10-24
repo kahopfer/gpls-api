@@ -60,20 +60,30 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/auth/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .antMatchers(HttpMethod.DELETE, "/users/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.POST, "/users/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.GET, "/users/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.PUT, "/users/resetPassword/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.POST, "/guardians/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.POST, "/students/**").access("hasRole('ROLE_ADMIN')")
+
                 .antMatchers(HttpMethod.POST, "/families/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.PUT, "/guardians/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.PUT, "/students/updateStudent/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.PUT, "/families/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.DELETE, "/guardians/**").access("hasRole('ROLE_ADMIN')")
-                .antMatchers(HttpMethod.DELETE, "/students/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/families/**").access("hasRole('ROLE_ADMIN')")
+
+                .antMatchers(HttpMethod.POST, "/students/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/students/updateStudent/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.DELETE, "/students/**").access("hasRole('ROLE_ADMIN')")
+
+                .antMatchers(HttpMethod.POST, "/guardians/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/guardians/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.DELETE, "/guardians/**").access("hasRole('ROLE_ADMIN')")
+
                 .antMatchers(HttpMethod.DELETE, "/lineItems/**").access("hasRole('ROLE_ADMIN')")
+
+                .antMatchers(HttpMethod.GET, "/users/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.POST, "/users/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/users/resetPassword/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.DELETE, "/users/**").access("hasRole('ROLE_ADMIN')")
+
+                .antMatchers(HttpMethod.GET, "/priceList/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.POST, "/priceList/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/priceList/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.DELETE, "/priceList/**").access("hasRole('ROLE_ADMIN')")
                 .anyRequest().authenticated();
 
         // Custom JWT based security filter

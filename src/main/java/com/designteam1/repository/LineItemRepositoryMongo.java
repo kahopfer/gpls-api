@@ -23,7 +23,7 @@ public class LineItemRepositoryMongo implements LineItemRepository {
     private MongoTemplate mt;
 
     @Override
-    public List<LineItem> getLineItems(String familyID, String studentID, String checkedOut) {
+    public List<LineItem> getLineItems(String familyID, String studentID, String checkedOut, String invoiced) {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyID)) {
@@ -37,6 +37,12 @@ public class LineItemRepositoryMongo implements LineItemRepository {
         }
         if (StringUtils.isNotEmpty(checkedOut) && checkedOut.equals("notNull")) {
             query.addCriteria(Criteria.where("checkOut").ne(null));
+        }
+        if (StringUtils.isNotEmpty(invoiced) && invoiced.equals("null")) {
+            query.addCriteria(Criteria.where("invoiceID").is(null));
+        }
+        if (StringUtils.isNotEmpty(invoiced) && invoiced.equals("notNull")) {
+            query.addCriteria(Criteria.where("invoiceID").ne(null));
         }
         return mt.find(query, LineItem.class, collectionName);
     }
