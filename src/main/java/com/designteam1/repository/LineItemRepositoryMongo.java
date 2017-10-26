@@ -3,6 +3,7 @@ package com.designteam1.repository;
 import com.designteam1.model.LineItem;
 import com.mongodb.WriteResult;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.Decimal128;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -62,8 +63,8 @@ public class LineItemRepositoryMongo implements LineItemRepository {
         update.set("checkIn", lineItem.getCheckIn());
         update.set("checkOut", lineItem.getCheckOut());
         update.set("extraItems", lineItem.getExtraItems());
-        update.set("earlyInLateOutFee", lineItem.getEarlyInLateOutFee());
-        update.set("lineTotalCost", lineItem.getLineTotalCost());
+        update.set("earlyInLateOutFee", new Decimal128(lineItem.getEarlyInLateOutFee()));
+        update.set("lineTotalCost", new Decimal128(lineItem.getLineTotalCost()));
         update.set("checkInBy", lineItem.getCheckInBy());
         update.set("checkOutBy", lineItem.getCheckOutBy());
         update.set("notes", lineItem.getNotes());

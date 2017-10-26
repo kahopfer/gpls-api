@@ -3,6 +3,7 @@ package com.designteam1.repository;
 import com.designteam1.model.PriceList;
 import com.mongodb.WriteResult;
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.Decimal128;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -47,7 +48,7 @@ public class PriceListRepositoryMongo implements PriceListRepository {
         final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
         final Update update = new Update();
 
-        update.set("itemValue", priceList.getItemValue());
+        update.set("itemValue", new Decimal128(priceList.getItemValue()));
 
         final WriteResult result = mt.updateFirst(query, update, PriceList.class, collectionName);
 
