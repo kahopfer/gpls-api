@@ -1,5 +1,6 @@
 package com.designteam1.controller;
 
+import com.designteam1.helpers.LineItemHelpers;
 import com.designteam1.model.LineItem;
 import com.designteam1.model.LineItems;
 import com.designteam1.repository.LineItemRepository;
@@ -32,6 +33,8 @@ public class LineItemController {
 
     @Autowired
     LineItemRepository lineItemRepository;
+
+    private LineItemHelpers lineItemHelpers = new LineItemHelpers();
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItems> getLineItems(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
@@ -67,19 +70,23 @@ public class LineItemController {
         }
     }
 
-    // extraItems, earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
+    // earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItem> updateLineItem(@PathVariable(name = "id") final String id, @RequestBody final LineItem lineItem) {
         try {
             if (lineItem == null || id == null || StringUtils.isBlank(lineItem.get_id())
-                    || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID())
-                    || lineItem.getCheckIn() == null || lineItem.getCheckOut() == null
+                    || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID()) || StringUtils.isBlank(String.valueOf(lineItem.isExtraItem()))
+                    || lineItem.getCheckIn() == null || lineItem.getCheckOut() == null || StringUtils.isBlank(lineItem.getServiceType())
                     || StringUtils.isBlank(lineItem.getCheckInBy()) || StringUtils.isBlank(lineItem.getCheckOutBy())) {
                 logger.error("Error in 'updateLineItem': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (lineItem.getCheckIn().after(lineItem.getCheckOut())) {
                 logger.error("Error in 'updateLineItem': check in time is later than check out time");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                // Not sure about this... what if they forget to check someone out of after care until the morning?
+//            } else if (!this.lineItemHelpers.inSameDay(lineItem.getCheckIn(), lineItem.getCheckOut())) {
+//                logger.error("Error in 'updateLineItem': check in time and check out time are not in the same day");
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(lineItem.get_id())) {
                 logger.error("Error in 'updateLineItem': id parameter does not match id in lineItem");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -103,17 +110,22 @@ public class LineItemController {
         }
     }
 
-    // checkOut, checkOutBy, extraItems, earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
+    // checkOut, checkOutBy, serviceType, earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItem> createLineItem(@RequestBody final LineItem lineItem) {
         try {
             if (lineItem == null || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID())
-                    || lineItem.getCheckIn() == null || StringUtils.isBlank(lineItem.getCheckInBy())) {
+                    || StringUtils.isBlank(String.valueOf(lineItem.isExtraItem())) || lineItem.getCheckIn() == null || StringUtils.isBlank(lineItem.getCheckInBy())
+                    || (lineItem.isExtraItem() && StringUtils.isBlank(lineItem.getServiceType())) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getCheckOutBy()))
+                    || (StringUtils.isNotBlank(lineItem.getCheckOutBy()) && lineItem.getCheckOut() == null) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getServiceType()))) {
                 logger.error("Error in 'createLineItem': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (lineItem.getCheckOut() != null && lineItem.getCheckIn().after(lineItem.getCheckOut())) {
                 logger.error("Error in 'updateLineItem': check in time is later than check out time");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+//            } else if (!this.lineItemHelpers.inSameDay(lineItem.getCheckIn(), lineItem.getCheckOut())) {
+//                logger.error("Error in 'updateLineItem': check in time and check out time are not in the same day");
+//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
                 if (lineItem1 == null || lineItem1.get_id() == null) {

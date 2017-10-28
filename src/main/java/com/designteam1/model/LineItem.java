@@ -11,10 +11,10 @@ public class LineItem {
     private String _id;
     private String familyID;
     private String studentID;
+    private boolean extraItem;
     private Date checkIn;
     private Date checkOut;
-//    private String serviceType;
-    private List<ExtraItem> extraItems;
+    private String serviceType;
     private Decimal128 earlyInLateOutFee;
     private Decimal128 lineTotalCost;
     private String checkInBy;
@@ -62,20 +62,12 @@ public class LineItem {
         this.checkOut = checkOut;
     }
 
-//    public String getServiceType() {
-//        return serviceType;
-//    }
-//
-//    public void setServiceType(String serviceType) {
-//        this.serviceType = serviceType;
-//    }
-
-    public List<ExtraItem> getExtraItems() {
-        return extraItems;
+    public String getServiceType() {
+        return serviceType;
     }
 
-    public void setExtraItems(List<ExtraItem> extraItems) {
-        this.extraItems = extraItems;
+    public void setServiceType(String serviceType) {
+        this.serviceType = serviceType;
     }
 
     public BigDecimal getEarlyInLateOutFee() {
@@ -124,5 +116,13 @@ public class LineItem {
 
     public void setInvoiceID(String invoiceID) {
         this.invoiceID = invoiceID;
+    }
+
+    public boolean isExtraItem() {
+        return extraItem;
+    }
+
+    public void setExtraItem(boolean extraItem) {
+        this.extraItem = extraItem;
     }
 }

@@ -62,7 +62,7 @@ public class LineItemRepositoryMongo implements LineItemRepository {
 
         update.set("checkIn", lineItem.getCheckIn());
         update.set("checkOut", lineItem.getCheckOut());
-        update.set("extraItems", lineItem.getExtraItems());
+        update.set("serviceType", lineItem.getServiceType());
         update.set("earlyInLateOutFee", new Decimal128(lineItem.getEarlyInLateOutFee()));
         update.set("lineTotalCost", new Decimal128(lineItem.getLineTotalCost()));
         update.set("checkInBy", lineItem.getCheckInBy());
