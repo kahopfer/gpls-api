@@ -80,7 +80,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.PUT, "/users/resetPassword/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/users/**").access("hasRole('ROLE_ADMIN')")
 
-                .antMatchers(HttpMethod.GET, "/priceList/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/priceList/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.PUT, "/priceList/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/priceList/**").access("hasRole('ROLE_ADMIN')")
