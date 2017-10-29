@@ -60,6 +60,7 @@ public class LineItemRepositoryMongo implements LineItemRepository {
         final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
         final Update update = new Update();
 
+        update.set("studentID", lineItem.getStudentID());
         update.set("checkIn", lineItem.getCheckIn());
         update.set("checkOut", lineItem.getCheckOut());
         update.set("serviceType", lineItem.getServiceType());
