@@ -33,14 +33,14 @@ public class AuthenticationRestController {
     public ResponseEntity<?> createAuthenticationToken(@RequestBody JwtAuthenticationRequest authenticationRequest, Device device) throws AuthenticationException {
 
         // Reload password post-security so we can generate token
-        final JwtUser userDetails = (JwtUser) userDetailsService.loadUserByUsername(authenticationRequest.getUsername());
+        final JwtUser userDetails = (JwtUser) userDetailsService.loadUserByUsername(authenticationRequest.getUsername().toUpperCase());
 
         //Compare auth request
         if (authenticationRequest.getPassword().equals(userDetails.getPassword())) {
             final String token = jwtTokenUtil.generateToken(userDetails, device);
 
             // Return the token
-            return ResponseEntity.ok(new JwtAuthenticationResponse(token, userDetails.getUsername(), userDetails.getFirstname(), userDetails.getLastname(), userDetails.getAuthorities()));
+            return ResponseEntity.ok(new JwtAuthenticationResponse(token, userDetails.getUsername().toUpperCase(), userDetails.getFirstname(), userDetails.getLastname(), userDetails.getAuthorities()));
         } else {
             return new ResponseEntity<>(Collections.singletonMap("response", "username or password is incorrect"), HttpStatus.UNAUTHORIZED);
         }

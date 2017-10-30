@@ -62,6 +62,7 @@ public class UserController {
                 logger.error("Error in 'createUser': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+                user.setUsername(user.getUsername().toUpperCase());
                 Optional<User> userList = userRepository.findByUsername(user.getUsername());
                 if (userList.isPresent()) {
                     logger.error("Error in 'createUser': username already exists");
