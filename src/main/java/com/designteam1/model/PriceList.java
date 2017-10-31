@@ -27,11 +27,17 @@ public class PriceList {
     }
 
     public BigDecimal getItemValue() {
-        return itemValue.bigDecimalValue();
+        if (this.itemValue != null) {
+            return itemValue.bigDecimalValue();
+        } else {
+            return null;
+        }
     }
 
     public void setItemValue(BigDecimal itemValue) {
-        this.itemValue = new Decimal128(itemValue);
+        if (itemValue != null) {
+            this.itemValue = new Decimal128(itemValue);
+        }
     }
 
     public Boolean getItemExtra() {

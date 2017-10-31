@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.List;
 
 public class LineItem {
-    // TODO: Maybe store student name as well
     private String _id;
     private String familyID;
     private String studentID;
@@ -71,19 +70,31 @@ public class LineItem {
     }
 
     public BigDecimal getEarlyInLateOutFee() {
-        return earlyInLateOutFee.bigDecimalValue();
+        if (this.earlyInLateOutFee != null) {
+            return earlyInLateOutFee.bigDecimalValue();
+        } else {
+            return null;
+        }
     }
 
     public void setEarlyInLateOutFee(BigDecimal earlyInLateOutFee) {
-        this.earlyInLateOutFee = new Decimal128(earlyInLateOutFee);
+        if (earlyInLateOutFee != null) {
+            this.earlyInLateOutFee = new Decimal128(earlyInLateOutFee);
+        }
     }
 
     public BigDecimal getLineTotalCost() {
-        return lineTotalCost.bigDecimalValue();
+        if (this.lineTotalCost != null) {
+            return lineTotalCost.bigDecimalValue();
+        } else {
+            return null;
+        }
     }
 
     public void setLineTotalCost(BigDecimal lineTotalCost) {
-        this.lineTotalCost = new Decimal128(lineTotalCost);
+        if (lineTotalCost != null) {
+            this.lineTotalCost = new Decimal128(lineTotalCost);
+        }
     }
 
     public String getCheckInBy() {

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LineItemRepository {
-    List<LineItem> getLineItems(final String familyID, final String studentID, final String checkedOut, final String invoiced);
+    List<LineItem> getLineItems(final String familyID, final String studentID, final String checkedOut, final String invoiced, final String serviceType);
 
     Optional<LineItem> getLineItem(final String id);
 

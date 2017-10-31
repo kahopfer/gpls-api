@@ -40,10 +40,11 @@ public class LineItemController {
     public ResponseEntity<LineItems> getLineItems(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
                                                   @RequestParam(value = "studentID", defaultValue = "", required = false) final String studentID,
                                                   @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
-                                                  @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced) {
+                                                  @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced,
+                                                  @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType) {
         try {
             final LineItems lineItems = new LineItems();
-            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced);
+            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType);
             if (lineItemList == null) {
                 return ResponseEntity.ok(lineItems);
             }

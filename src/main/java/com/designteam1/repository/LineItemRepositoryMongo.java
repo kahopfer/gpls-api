@@ -24,7 +24,7 @@ public class LineItemRepositoryMongo implements LineItemRepository {
     private MongoTemplate mt;
 
     @Override
-    public List<LineItem> getLineItems(String familyID, String studentID, String checkedOut, String invoiced) {
+    public List<LineItem> getLineItems(String familyID, String studentID, String checkedOut, String invoiced, String serviceType) {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyID)) {
@@ -44,6 +44,9 @@ public class LineItemRepositoryMongo implements LineItemRepository {
         }
         if (StringUtils.isNotEmpty(invoiced) && invoiced.equals("notNull")) {
             query.addCriteria(Criteria.where("invoiceID").ne(null));
+        }
+        if (StringUtils.isNotEmpty(serviceType)) {
+            query.addCriteria(Criteria.where("serviceType").is(serviceType));
         }
         return mt.find(query, LineItem.class, collectionName);
     }

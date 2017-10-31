@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -70,11 +71,14 @@ public class PriceListController {
         try {
             if (priceList == null || id == null || StringUtils.isBlank(priceList.get_id())
                     || StringUtils.isBlank(priceList.getItemName()) || StringUtils.isBlank(String.valueOf(priceList.getItemValue()))
-                    || StringUtils.isBlank(String.valueOf(priceList.getItemExtra()))) {
+                    || priceList.getItemValue() == null || StringUtils.isBlank(String.valueOf(priceList.getItemExtra()))) {
                 logger.error("Error in 'updatePriceList': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(priceList.get_id())) {
                 logger.error("Error in 'updatePriceList': id parameter does not match id in priceList");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (priceList.getItemValue().compareTo(BigDecimal.ZERO) < 0) {
+                logger.error("Error in 'createPriceList': value cannot be less than zero");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 Optional<PriceList> priceListOptional = priceListRepository.getPriceList(id);
@@ -99,12 +103,15 @@ public class PriceListController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PriceList> createPriceList(@RequestBody final PriceList priceList) {
         try {
-            if (priceList == null || StringUtils.isBlank(priceList.getItemName()) || StringUtils.isBlank(String.valueOf(priceList.getItemValue()))
-                    || StringUtils.isBlank(String.valueOf(priceList.getItemExtra()))) {
+            if (priceList == null || StringUtils.isBlank(priceList.getItemName()) || priceList.getItemValue() == null
+                    || StringUtils.isBlank(String.valueOf(priceList.getItemValue())) || StringUtils.isBlank(String.valueOf(priceList.getItemExtra()))) {
                 logger.error("Error in 'createPriceList': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            } else if (String.valueOf(priceList.getItemExtra()).equals("true")) {
+            } else if (String.valueOf(priceList.getItemExtra()).equals("false")) {
                 logger.error("Error in 'createPriceList': cannot create new non extra items");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (priceList.getItemValue().compareTo(BigDecimal.ZERO) < 0) {
+                logger.error("Error in 'createPriceList': value cannot be less than zero");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 PriceList priceList1 = priceListRepository.createPriceList(priceList);
@@ -128,7 +135,7 @@ public class PriceListController {
         try {
             Optional<PriceList> priceList = priceListRepository.getPriceList(id);
             if (priceList.isPresent()) {
-                if (String.valueOf(priceList.get().getItemExtra()).equals("true")) {
+                if (String.valueOf(priceList.get().getItemExtra()).equals("false")) {
                     logger.error("Error in 'createPriceList': cannot delete non extra items");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
