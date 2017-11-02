@@ -110,8 +110,9 @@ public class PriceListController {
             } else if (String.valueOf(priceList.getItemExtra()).equals("false")) {
                 logger.error("Error in 'createPriceList': cannot create new non extra items");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            } else if (priceList.getItemValue().compareTo(BigDecimal.ZERO) < 0) {
-                logger.error("Error in 'createPriceList': value cannot be less than zero");
+            } else if (priceList.getItemValue().compareTo(BigDecimal.ZERO) < 0 &&
+                    String.valueOf(priceList.getItemExtra()).equals("false")) {
+                logger.error("Error in 'createPriceList': non-extra item value cannot be less than zero");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
                 PriceList priceList1 = priceListRepository.createPriceList(priceList);
