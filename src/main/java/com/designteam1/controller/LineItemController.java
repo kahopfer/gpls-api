@@ -44,7 +44,7 @@ public class LineItemController {
                                                   @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType) {
         try {
             final LineItems lineItems = new LineItems();
-            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType);
+            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType, null, null);
             if (lineItemList == null) {
                 return ResponseEntity.ok(lineItems);
             }

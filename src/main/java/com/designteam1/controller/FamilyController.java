@@ -1,8 +1,7 @@
 package com.designteam1.controller;
 
-import com.designteam1.model.Families;
-import com.designteam1.model.Family;
-import com.designteam1.repository.FamilyRepository;
+import com.designteam1.model.*;
+import com.designteam1.repository.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +31,18 @@ public class FamilyController {
 
     @Autowired
     private FamilyRepository familyRepository;
+
+    @Autowired
+    private StudentRepository studentRepository;
+
+    @Autowired
+    private GuardianRepository guardianRepository;
+
+    @Autowired
+    private InvoiceRepository invoiceRepository;
+
+    @Autowired
+    private LineItemRepository lineItemRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Families> getFamilies() {
@@ -124,6 +135,43 @@ public class FamilyController {
         try {
             Optional<Family> family = familyRepository.getFamily(id);
             if (family.isPresent()) {
+                // Check for uninvoiced line items and unpaid invoices
+                List<Invoice> unpaidInvoiceList = invoiceRepository.getInvoices(family.get().get_id(), "false");
+                List<LineItem> uninvoicedLineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
+                        null, "null", null, null, null);
+                if (!uninvoicedLineItemList.isEmpty()) {
+                    logger.error("Error in 'deleteFamily': you cannot delete a family with uninvoiced line items");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+                if (!unpaidInvoiceList.isEmpty()) {
+                    logger.error("Error in 'deleteFamily': you cannot delete a family with unpaid invoices");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                }
+
+                // Delete students
+                for (String studentID : family.get().getStudents()) {
+                    Optional<Student> student = studentRepository.getStudent(studentID);
+                    student.ifPresent(student1 -> studentRepository.deleteStudent(student1));
+                }
+                // Delete guardians
+                for (String guardianID : family.get().getGuardians()) {
+                    Optional<Guardian> guardian = guardianRepository.getGuardian(guardianID);
+                    guardian.ifPresent(guardian1 -> guardianRepository.deleteGuardian(guardian1));
+                }
+                // Delete invoices
+                List<Invoice> invoiceList = invoiceRepository.getInvoices(family.get().get_id(), null);
+                for (Invoice invoice : invoiceList) {
+                    if (invoice.isPaid()) {
+                        invoiceRepository.deleteInvoice(invoice);
+                    }
+                }
+                // Delete line items
+                List<LineItem> lineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
+                        null, null, null, null, null);
+                for (LineItem lineItem : lineItemList) {
+                    lineItemRepository.deleteLineItem(lineItem);
+                }
+                // Delete family
                 Family result = familyRepository.deleteFamily(family.get());
                 if (result == null) {
                     logger.error("Error in 'deleteFamily': error deleting family");
