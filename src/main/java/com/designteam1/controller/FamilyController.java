@@ -25,8 +25,14 @@ public class FamilyController {
 
     }
 
-    public FamilyController(final FamilyRepository familyRepository) {
+    public FamilyController(final FamilyRepository familyRepository, final StudentRepository studentRepository,
+                            final GuardianRepository guardianRepository, final InvoiceRepository invoiceRepository,
+                            final LineItemRepository lineItemRepository) {
         this.familyRepository = familyRepository;
+        this.studentRepository = studentRepository;
+        this.guardianRepository = guardianRepository;
+        this.invoiceRepository = invoiceRepository;
+        this.lineItemRepository = lineItemRepository;
     }
 
     @Autowired
@@ -135,41 +141,65 @@ public class FamilyController {
         try {
             Optional<Family> family = familyRepository.getFamily(id);
             if (family.isPresent()) {
-                // Check for uninvoiced line items and unpaid invoices
-                List<Invoice> unpaidInvoiceList = invoiceRepository.getInvoices(family.get().get_id(), "false");
+                // Check for uninvoiced line items
                 List<LineItem> uninvoicedLineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
                         null, "null", null, null, null);
                 if (!uninvoicedLineItemList.isEmpty()) {
                     logger.error("Error in 'deleteFamily': you cannot delete a family with uninvoiced line items");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
+                // Check for unpaid invoices
+                List<Invoice> unpaidInvoiceList = invoiceRepository.getInvoices(family.get().get_id(), "false");
                 if (!unpaidInvoiceList.isEmpty()) {
                     logger.error("Error in 'deleteFamily': you cannot delete a family with unpaid invoices");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-                }
-
-                // Delete students
-                for (String studentID : family.get().getStudents()) {
-                    Optional<Student> student = studentRepository.getStudent(studentID);
-                    student.ifPresent(student1 -> studentRepository.deleteStudent(student1));
-                }
-                // Delete guardians
-                for (String guardianID : family.get().getGuardians()) {
-                    Optional<Guardian> guardian = guardianRepository.getGuardian(guardianID);
-                    guardian.ifPresent(guardian1 -> guardianRepository.deleteGuardian(guardian1));
-                }
-                // Delete invoices
-                List<Invoice> invoiceList = invoiceRepository.getInvoices(family.get().get_id(), null);
-                for (Invoice invoice : invoiceList) {
-                    if (invoice.isPaid()) {
-                        invoiceRepository.deleteInvoice(invoice);
-                    }
                 }
                 // Delete line items
                 List<LineItem> lineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
                         null, null, null, null, null);
                 for (LineItem lineItem : lineItemList) {
-                    lineItemRepository.deleteLineItem(lineItem);
+                    LineItem result = lineItemRepository.deleteLineItem(lineItem);
+                    if (result == null) {
+                        logger.error("Error in 'deleteFamily': error deleting line item");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    }
+                }
+                // Delete invoices
+                List<Invoice> invoiceList = invoiceRepository.getInvoices(family.get().get_id(), null);
+                for (Invoice invoice : invoiceList) {
+                    Invoice result = invoiceRepository.deleteInvoice(invoice);
+                    if (result == null) {
+                        logger.error("Error in 'deleteFamily': error deleting invoice");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    }
+                }
+                // Delete guardians
+                for (String guardianID : family.get().getGuardians()) {
+                    Optional<Guardian> guardian = guardianRepository.getGuardian(guardianID);
+                    if (guardian.isPresent()) {
+                        Guardian result = guardianRepository.deleteGuardian(guardian.get());
+                        if (result == null) {
+                            logger.error("Error in 'deleteFamily': error deleting guardian");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        }
+                    } else {
+                        logger.error("Error in 'deleteFamily': guardian is null");
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    }
+                }
+                // Delete students
+                for (String studentID : family.get().getStudents()) {
+                    Optional<Student> student = studentRepository.getStudent(studentID);
+                    if (student.isPresent()) {
+                        Student result = studentRepository.deleteStudent(student.get());
+                        if (result == null) {
+                            logger.error("Error in 'deleteFamily': error deleting student");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        }
+                    } else {
+                        logger.error("Error in 'deleteFamily': student is null");
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    }
                 }
                 // Delete family
                 Family result = familyRepository.deleteFamily(family.get());

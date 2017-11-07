@@ -1,7 +1,9 @@
 package com.designteam1.controller;
 
+import com.designteam1.model.Family;
 import com.designteam1.model.Guardian;
 import com.designteam1.model.Guardians;
+import com.designteam1.repository.FamilyRepository;
 import com.designteam1.repository.GuardianRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,12 +28,16 @@ public class GuardianController {
 
     }
 
-    public GuardianController(final GuardianRepository guardianRepository) {
+    public GuardianController(final GuardianRepository guardianRepository, final FamilyRepository familyRepository) {
         this.guardianRepository = guardianRepository;
+        this.familyRepository = familyRepository;
     }
 
     @Autowired
     private GuardianRepository guardianRepository;
+
+    @Autowired
+    private FamilyRepository familyRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardians> getGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
@@ -75,14 +81,27 @@ public class GuardianController {
                 logger.error("Error in 'createGuardian': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
-                Guardian guardian1 = guardianRepository.createGuardian(guardian);
-                if (guardian1 == null || guardian1.get_id() == null) {
-                    logger.error("Error in 'createGuardian': error creating guardian");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                Optional<Family> guardianFamily = familyRepository.getFamily(guardian.getFamilyUnitID());
+                if (guardianFamily.isPresent()) {
+                    guardianFamily.get().getGuardians().add(guardian.get_id());
+                    Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
+                    if (familyResult == null) {
+                        logger.error("Error in 'createGuardian': error adding ID to family record");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        Guardian guardian1 = guardianRepository.createGuardian(guardian);
+                        if (guardian1 == null || guardian1.get_id() == null) {
+                            logger.error("Error in 'createGuardian': error creating guardian");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        } else {
+                            HttpHeaders header = new HttpHeaders();
+                            header.add("location", guardian1.get_id());
+                            return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                        }
+                    }
                 } else {
-                    HttpHeaders header = new HttpHeaders();
-                    header.add("location", guardian1.get_id());
-                    return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                    logger.error("Error in 'createGuardian': could not find family associated to guardian");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
             }
         } catch (final Exception e) {
@@ -129,12 +148,30 @@ public class GuardianController {
         try {
             Optional<Guardian> guardian = guardianRepository.getGuardian(id);
             if (guardian.isPresent()) {
-                Guardian result = guardianRepository.deleteGuardian(guardian.get());
-                if (result == null) {
-                    logger.error("Error in 'deleteGuardian': error deleting guardian");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                Optional<Family> guardianFamily = familyRepository.getFamily(guardian.get().getFamilyUnitID());
+                if (guardianFamily.isPresent()) {
+                    if (guardianFamily.get().getGuardians().size() == 1) {
+                        logger.error("Error in 'deleteGuardian': a family must have at least 1 guardian");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+                    // Remove guardianID from family record
+                    guardianFamily.get().getGuardians().removeIf(s -> s.equals(guardian.get().get_id()));
+                    Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
+                    if (familyResult == null) {
+                        logger.error("Error in 'deleteGuardian': error updating family record");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        Guardian result = guardianRepository.deleteGuardian(guardian.get());
+                        if (result == null) {
+                            logger.error("Error in 'deleteGuardian': error deleting guardian");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        } else {
+                            return ResponseEntity.status(HttpStatus.OK).body(null);
+                        }
+                    }
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    logger.error("Error in 'deleteGuardian': cannot find family associated to guardian");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
             } else {
                 logger.error("Error in 'deleteGuardian': guardian is null");

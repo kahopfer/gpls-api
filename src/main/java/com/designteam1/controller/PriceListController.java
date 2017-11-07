@@ -1,7 +1,9 @@
 package com.designteam1.controller;
 
+import com.designteam1.model.LineItem;
 import com.designteam1.model.PriceList;
 import com.designteam1.model.PriceLists;
+import com.designteam1.repository.LineItemRepository;
 import com.designteam1.repository.PriceListRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -27,12 +29,16 @@ public class PriceListController {
 
     }
 
-    public PriceListController(final PriceListRepository priceListRepository) {
+    public PriceListController(final PriceListRepository priceListRepository, final LineItemRepository lineItemRepository) {
         this.priceListRepository = priceListRepository;
+        this.lineItemRepository = lineItemRepository;
     }
 
     @Autowired
     private PriceListRepository priceListRepository;
+
+    @Autowired
+    private LineItemRepository lineItemRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<PriceLists> getPriceLists(@RequestParam(value = "itemName", defaultValue = "", required = false) final String itemName,
@@ -140,12 +146,19 @@ public class PriceListController {
                     logger.error("Error in 'createPriceList': cannot delete non extra items");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
-                PriceList result = priceListRepository.deletePriceList(priceList.get());
-                if (result == null) {
-                    logger.error("Error in 'deletePriceList': error deleting priceList");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                List<LineItem> lineItems = lineItemRepository.getLineItems(null, null,
+                        null, "null", priceList.get().getItemName(), null, null);
+                if (!lineItems.isEmpty()) {
+                    logger.error("Error in 'createPriceList': cannot delete rates that are in uninvoiced line items");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    PriceList result = priceListRepository.deletePriceList(priceList.get());
+                    if (result == null) {
+                        logger.error("Error in 'deletePriceList': error deleting priceList");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
                 }
             } else {
                 logger.error("Error in 'deletePriceList': priceList is null");

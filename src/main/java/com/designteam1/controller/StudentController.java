@@ -1,7 +1,11 @@
 package com.designteam1.controller;
 
+import com.designteam1.model.Family;
+import com.designteam1.model.LineItem;
 import com.designteam1.model.Student;
 import com.designteam1.model.Students;
+import com.designteam1.repository.FamilyRepository;
+import com.designteam1.repository.LineItemRepository;
 import com.designteam1.repository.StudentRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,12 +30,21 @@ public class StudentController {
 
     }
 
-    public StudentController(final StudentRepository studentRepository) {
+    public StudentController(final StudentRepository studentRepository, final FamilyRepository familyRepository,
+                             final LineItemRepository lineItemRepository) {
         this.studentRepository = studentRepository;
+        this.familyRepository = familyRepository;
+        this.lineItemRepository = lineItemRepository;
     }
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private FamilyRepository familyRepository;
+
+    @Autowired
+    private LineItemRepository lineItemRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Students> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
@@ -75,14 +88,27 @@ public class StudentController {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
-                Student student1 = studentRepository.createStudent(student);
-                if (student1 == null || student1.get_id() == null) {
-                    logger.error("Error in 'createStudent': error creating student");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                Optional<Family> studentFamily = familyRepository.getFamily(student.getFamilyUnitID());
+                if (studentFamily.isPresent()) {
+                    studentFamily.get().getStudents().add(student.get_id());
+                    Family familyResult = familyRepository.updateFamily(studentFamily.get().get_id(), studentFamily.get());
+                    if (familyResult == null) {
+                        logger.error("Error in 'createStudent': error adding ID to family record");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        Student student1 = studentRepository.createStudent(student);
+                        if (student1 == null || student1.get_id() == null) {
+                            logger.error("Error in 'createStudent': error creating student");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        } else {
+                            HttpHeaders header = new HttpHeaders();
+                            header.add("location", student1.get_id());
+                            return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                        }
+                    }
                 } else {
-                    HttpHeaders header = new HttpHeaders();
-                    header.add("location", student1.get_id());
-                    return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                    logger.error("Error in 'createStudent': could not find family associated to student");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
             }
         } catch (final Exception e) {
@@ -157,12 +183,36 @@ public class StudentController {
         try {
             Optional<Student> student = studentRepository.getStudent(id);
             if (student.isPresent()) {
-                Student result = studentRepository.deleteStudent(student.get());
-                if (result == null) {
-                    logger.error("Error in 'deleteStudent': error deleting student");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                Optional<Family> studentFamily = familyRepository.getFamily(student.get().getFamilyUnitID());
+                if (studentFamily.isPresent()) {
+                    if (studentFamily.get().getStudents().size() == 1) {
+                        logger.error("Error in 'deleteStudent': a family must have at least 1 child");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+                    List<LineItem> uninvoicedLineItems = lineItemRepository.getLineItems(null, student.get().get_id(),
+                            null, "null", null, null, null);
+                    if (uninvoicedLineItems.size() > 0) {
+                        logger.error("Error in 'deleteStudent': you cannot delete a student with uninvoiced line items");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+                    // Remove student ID from student array in family
+                    studentFamily.get().getStudents().removeIf(s -> s.equals(student.get().get_id()));
+                    Family familyResult = familyRepository.updateFamily(studentFamily.get().get_id(), studentFamily.get());
+                    if (familyResult == null) {
+                        logger.error("Error in 'deleteStudent': error updating family record");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        Student result = studentRepository.deleteStudent(student.get());
+                        if (result == null) {
+                            logger.error("Error in 'deleteStudent': error deleting student");
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        } else {
+                            return ResponseEntity.status(HttpStatus.OK).body(null);
+                        }
+                    }
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    logger.error("Error in 'deleteStudent': cannot find family associated to student");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
             } else {
                 logger.error("Error in 'deleteStudent': student is null");
