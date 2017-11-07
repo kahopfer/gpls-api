@@ -117,6 +117,31 @@ public class StudentController {
         }
     }
 
+    @PostMapping(value = "enrollStudent", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Student> enrollStudent(@RequestBody final Student student) {
+        try {
+            if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
+                    || StringUtils.isBlank(student.get_id())) {
+                logger.error("Error in 'createStudent': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Student student1 = studentRepository.createStudent(student);
+                if (student1 == null || student1.get_id() == null) {
+                    logger.error("Error in 'createStudent': error enrolling student");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    HttpHeaders header = new HttpHeaders();
+                    header.add("location", student1.get_id());
+                    return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'createStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // Notes, middle initial, checkedIn, and birthdate are not required
     @PutMapping(value = "updateStudent/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {

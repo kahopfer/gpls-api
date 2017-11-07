@@ -110,6 +110,32 @@ public class GuardianController {
         }
     }
 
+    @PostMapping(value = "enrollGuardian", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Guardian> enrollGuardian(@RequestBody final Guardian guardian) {
+        try {
+            if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
+                    || StringUtils.isBlank(guardian.getRelationship()) ||
+                    StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                logger.error("Error in 'createGuardian': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Guardian guardian1 = guardianRepository.createGuardian(guardian);
+                if (guardian1 == null || guardian1.get_id() == null) {
+                    logger.error("Error in 'createGuardian': error enrolling guardian");
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } else {
+                    HttpHeaders header = new HttpHeaders();
+                    header.add("location", guardian1.get_id());
+                    return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'createGuardian', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // SecPhone and middle initial are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardian> updateGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
