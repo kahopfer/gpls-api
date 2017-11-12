@@ -147,7 +147,7 @@ public class PriceListController {
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 }
                 List<LineItem> lineItems = lineItemRepository.getLineItems(null, null,
-                        null, "null", priceList.get().getItemName(), null, null);
+                        null, "null", priceList.get().getItemName(), null, null, null);
                 if (!lineItems.isEmpty()) {
                     logger.error("Error in 'createPriceList': cannot delete rates that are in uninvoiced line items");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);

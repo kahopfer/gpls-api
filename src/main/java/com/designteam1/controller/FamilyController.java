@@ -143,7 +143,7 @@ public class FamilyController {
             if (family.isPresent()) {
                 // Check for uninvoiced line items
                 List<LineItem> uninvoicedLineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
-                        null, "null", null, null, null);
+                        null, "null", null, null, null, null);
                 if (!uninvoicedLineItemList.isEmpty()) {
                     logger.error("Error in 'deleteFamily': you cannot delete a family with uninvoiced line items");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -156,7 +156,7 @@ public class FamilyController {
                 }
                 // Delete line items
                 List<LineItem> lineItemList = lineItemRepository.getLineItems(family.get().get_id(), null,
-                        null, null, null, null, null);
+                        null, null, null, null, null, null);
                 for (LineItem lineItem : lineItemList) {
                     LineItem result = lineItemRepository.deleteLineItem(lineItem);
                     if (result == null) {

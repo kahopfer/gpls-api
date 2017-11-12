@@ -8,7 +8,8 @@ import java.util.Optional;
 
 public interface LineItemRepository {
     List<LineItem> getLineItems(final String familyID, final String studentID, final String checkedOut,
-                                final String invoiced, final String serviceType, final Date fromDate, final Date toDate);
+                                final String invoiced, final String serviceType, final Date fromDate, final Date toDate,
+                                final String invoiceID);
 
     Optional<LineItem> getLineItem(final String id);
 

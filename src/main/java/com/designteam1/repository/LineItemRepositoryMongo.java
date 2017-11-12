@@ -25,7 +25,7 @@ public class LineItemRepositoryMongo implements LineItemRepository {
 
     @Override
     public List<LineItem> getLineItems(String familyID, String studentID, String checkedOut, String invoiced,
-                                       String serviceType, Date fromDate, Date toDate) {
+                                       String serviceType, Date fromDate, Date toDate, String invoiceID) {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyID)) {
@@ -51,6 +51,9 @@ public class LineItemRepositoryMongo implements LineItemRepository {
         }
         if (fromDate != null && toDate != null) {
             query.addCriteria(Criteria.where("checkIn").gte(fromDate).lt(toDate));
+        }
+        if (StringUtils.isNotEmpty(invoiceID)) {
+            query.addCriteria(Criteria.where("invoiceID").is(invoiceID));
         }
         return mt.find(query, LineItem.class, collectionName);
     }

@@ -41,10 +41,11 @@ public class LineItemController {
                                                   @RequestParam(value = "studentID", defaultValue = "", required = false) final String studentID,
                                                   @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
                                                   @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced,
-                                                  @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType) {
+                                                  @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType,
+                                                  @RequestParam(value = "invoiceID", defaultValue = "", required = false) final String invoiceID) {
         try {
             final LineItems lineItems = new LineItems();
-            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType, null, null);
+            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType, null, null, invoiceID);
             if (lineItemList == null) {
                 return ResponseEntity.ok(lineItems);
             }
@@ -71,14 +72,15 @@ public class LineItemController {
         }
     }
 
-    // earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
+    // notes and invoiceID are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItem> updateLineItem(@PathVariable(name = "id") final String id, @RequestBody final LineItem lineItem) {
         try {
             if (lineItem == null || id == null || StringUtils.isBlank(lineItem.get_id())
                     || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID()) || StringUtils.isBlank(String.valueOf(lineItem.isExtraItem()))
                     || lineItem.getCheckIn() == null || lineItem.getCheckOut() == null || StringUtils.isBlank(lineItem.getServiceType())
-                    || StringUtils.isBlank(lineItem.getCheckInBy()) || StringUtils.isBlank(lineItem.getCheckOutBy())) {
+                    || StringUtils.isBlank(lineItem.getCheckInBy()) || StringUtils.isBlank(lineItem.getCheckOutBy())
+                    || StringUtils.isBlank(String.valueOf(lineItem.getLineTotalCost())) || StringUtils.isBlank(String.valueOf(lineItem.getEarlyInLateOutFee()))) {
                 logger.error("Error in 'updateLineItem': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (lineItem.getCheckIn().after(lineItem.getCheckOut())) {
@@ -111,14 +113,15 @@ public class LineItemController {
         }
     }
 
-    // checkOut, checkOutBy, serviceType, earlyInLateOutFee, lineTotalCost, notes, and invoiceID are not required
+    // checkOut, checkOutBy, serviceType, notes, and invoiceID are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<LineItem> createLineItem(@RequestBody final LineItem lineItem) {
         try {
             if (lineItem == null || StringUtils.isBlank(lineItem.getFamilyID()) || StringUtils.isBlank(lineItem.getStudentID())
                     || StringUtils.isBlank(String.valueOf(lineItem.isExtraItem())) || lineItem.getCheckIn() == null || StringUtils.isBlank(lineItem.getCheckInBy())
                     || (lineItem.isExtraItem() && StringUtils.isBlank(lineItem.getServiceType())) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getCheckOutBy()))
-                    || (StringUtils.isNotBlank(lineItem.getCheckOutBy()) && lineItem.getCheckOut() == null) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getServiceType()))) {
+                    || (StringUtils.isNotBlank(lineItem.getCheckOutBy()) && lineItem.getCheckOut() == null) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getServiceType()))
+                    || StringUtils.isBlank(String.valueOf(lineItem.getLineTotalCost())) || StringUtils.isBlank(String.valueOf(lineItem.getEarlyInLateOutFee()))) {
                 logger.error("Error in 'createLineItem': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (lineItem.getCheckOut() != null && lineItem.getCheckIn().after(lineItem.getCheckOut())) {
@@ -149,12 +152,17 @@ public class LineItemController {
         try {
             Optional<LineItem> lineItem = lineItemRepository.getLineItem(id);
             if (lineItem.isPresent()) {
-                LineItem result = lineItemRepository.deleteLineItem(lineItem.get());
-                if (result == null) {
-                    logger.error("Error in 'deleteLineItem': error deleting lineItem");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                if (StringUtils.isNotEmpty(lineItem.get().getInvoiceID())) {
+                    logger.error("Error in 'deleteLineItem': cannot delete an invoiced line item");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    LineItem result = lineItemRepository.deleteLineItem(lineItem.get());
+                    if (result == null) {
+                        logger.error("Error in 'deleteLineItem': error deleting lineItem");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
                 }
             } else {
                 logger.error("Error in 'deleteLineItem': lineItem is null");

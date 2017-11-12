@@ -215,7 +215,7 @@ public class StudentController {
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                     }
                     List<LineItem> uninvoicedLineItems = lineItemRepository.getLineItems(null, student.get().get_id(),
-                            null, "null", null, null, null);
+                            null, "null", null, null, null, null);
                     if (uninvoicedLineItems.size() > 0) {
                         logger.error("Error in 'deleteStudent': you cannot delete a student with uninvoiced line items");
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
