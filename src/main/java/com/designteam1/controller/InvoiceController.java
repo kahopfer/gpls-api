@@ -114,7 +114,8 @@ public class InvoiceController {
                 BigDecimal totalInvoiceCost = new BigDecimal(0);
 
                 List<String> invoiceIDList = new ArrayList<>();
-                // TODO: Calculate full week discount
+                List<LineItem> beforeCareFullMorningLineItems = new ArrayList<>();
+                List<LineItem> afterCareFullAfternoonLineItems = new ArrayList<>();
                 for (LineItem lineItem : lineItemList) {
                     BigDecimal lineTotalCost = new BigDecimal(0);
 
@@ -138,10 +139,9 @@ public class InvoiceController {
                                     int checkInTime = (checkInCalendar.get(Calendar.HOUR_OF_DAY) * 10000) + (checkInCalendar.get(Calendar.MINUTE) * 100) + checkInCalendar.get(Calendar.SECOND);
                                     int checkOutTime = (checkOutCalendar.get(Calendar.HOUR_OF_DAY) * 10000) + (checkOutCalendar.get(Calendar.MINUTE) * 100) + checkOutCalendar.get(Calendar.SECOND);
 
-                                    // Check if check in and check our are in the morning
+                                    // Check if check in and check out are in the morning
                                     if (checkInTime < 120000 && checkOutTime <= 120000) {
                                         //Before care logic
-
                                         String beforeCareStart = "06:30:00";
                                         Date beforeCareStartDate = new SimpleDateFormat("HH:mm:ss").parse(beforeCareStart);
                                         Calendar beforeCareStartCalendar = Calendar.getInstance();
@@ -179,20 +179,21 @@ public class InvoiceController {
                                         List<PriceList> earlyInFee = priceListRepository.getPriceLists("Early In Late Out", null);
                                         if (earlyInFee != null && !earlyInFee.isEmpty()) {
                                             lineItem.setEarlyInLateOutFee(earlyInFee.get(0).getItemValue().multiply(earlyDropOffMinutesBigDecimal));
-                                            lineTotalCost = lineTotalCost.add(earlyInFee.get(0).getItemValue().multiply(earlyDropOffMinutesBigDecimal));
+                                            BigDecimal earlyInFeeTotal = earlyInFee.get(0).getItemValue().multiply(earlyDropOffMinutesBigDecimal);
+                                            lineTotalCost = lineTotalCost.add(earlyInFeeTotal);
                                         }
 
                                         long regularBeforeCareMinutes = 0L;
                                         // If the child was checked out before before care ended and after it started
                                         if (checkOutCalendar.getTimeInMillis() < beforeCareEndCalendar.getTimeInMillis() && checkOutCalendar.getTimeInMillis() > beforeCareStartCalendar.getTimeInMillis()) {
-                                            // If the child was checked in after before care started and before or at 7:45
+                                            // If the child was checked in after before care started and at or before 7:45
                                             if (checkInCalendar.getTimeInMillis() > beforeCareStartCalendar.getTimeInMillis() && checkInCalendar.getTimeInMillis() <= beforeCareEndBillingCalendar.getTimeInMillis()) {
                                                 regularBeforeCareMinutes = TimeUnit.MILLISECONDS.toMinutes(checkOutCalendar.getTimeInMillis() - checkInCalendar.getTimeInMillis());
                                             } else if (checkInCalendar.getTimeInMillis() <= beforeCareStartCalendar.getTimeInMillis()) {
                                                 // If the child was checked in at or before before care started
                                                 regularBeforeCareMinutes = TimeUnit.MILLISECONDS.toMinutes(checkOutCalendar.getTimeInMillis() - beforeCareStartCalendar.getTimeInMillis());
                                             } else if (checkInCalendar.getTimeInMillis() > beforeCareEndBillingCalendar.getTimeInMillis()) {
-                                                lineItem.setServiceType("Before Care After 7:45 (No Charge)");
+                                                lineItem.setServiceType("Before Care After 7:45");
                                             }
                                             // If the child was checked out after before care ended
                                         } else if (checkOutCalendar.getTimeInMillis() > beforeCareEndCalendar.getTimeInMillis()) {
@@ -203,7 +204,7 @@ public class InvoiceController {
                                             } else if (checkInCalendar.getTimeInMillis() <= beforeCareStartCalendar.getTimeInMillis()) {
                                                 regularBeforeCareMinutes = TimeUnit.MILLISECONDS.toMinutes(beforeCareEndCalendar.getTimeInMillis() - beforeCareStartCalendar.getTimeInMillis());
                                             } else if (checkInCalendar.getTimeInMillis() > beforeCareEndBillingCalendar.getTimeInMillis()) {
-                                                lineItem.setServiceType("Before Care After 7:45 (No Charge)");
+                                                lineItem.setServiceType("Before Care After 7:45");
                                             }
                                         }
 
@@ -218,11 +219,11 @@ public class InvoiceController {
                                             if (beforeCareFullMorning != null && !beforeCareFullMorning.isEmpty()) {
                                                 lineTotalCost = lineTotalCost.add(beforeCareFullMorning.get(0).getItemValue());
                                                 lineItem.setServiceType("Before Care Full Morning");
+                                                beforeCareFullMorningLineItems.add(lineItem);
                                             }
                                         }
                                     } else if (checkInTime >= 120000 && checkOutTime > 120000) {
-                                        // Check if check in and check our are in the afternoon
-
+                                        // Check if check in and check out are in the afternoon
                                         String afterCareStart = "15:30:00";
                                         Date afterCareStartDate = new SimpleDateFormat("HH:mm:ss").parse(afterCareStart);
                                         Calendar afterCareStartCalendar = Calendar.getInstance();
@@ -252,7 +253,8 @@ public class InvoiceController {
                                         List<PriceList> latePickupFee = priceListRepository.getPriceLists("Early In Late Out", null);
                                         if (latePickupFee != null && !latePickupFee.isEmpty()) {
                                             lineItem.setEarlyInLateOutFee(latePickupFee.get(0).getItemValue().multiply(latePickUpMinutesBigDecimal));
-                                            lineTotalCost = lineTotalCost.add(latePickupFee.get(0).getItemValue().multiply(latePickUpMinutesBigDecimal));
+                                            BigDecimal latePickupFeeTotal = latePickupFee.get(0).getItemValue().multiply(latePickUpMinutesBigDecimal);
+                                            lineTotalCost = lineTotalCost.add(latePickupFeeTotal);
                                         }
 
                                         long regularAfterCareMinutes = 0L;
@@ -275,7 +277,7 @@ public class InvoiceController {
                                                 regularAfterCareMinutes = TimeUnit.MILLISECONDS.toMinutes(afterCareEndCalendar.getTimeInMillis() - afterCareStartCalendar.getTimeInMillis());
                                             }
                                         } else if (checkInCalendar.getTimeInMillis() < afterCareStartCalendar.getTimeInMillis() && checkOutCalendar.getTimeInMillis() < afterCareStartCalendar.getTimeInMillis()) {
-                                            lineItem.setServiceType("After Care Before 3:30 (No Charge)");
+                                            lineItem.setServiceType("After Care Before 3:30");
                                         }
 
                                         if (regularAfterCareMinutes > 0 && regularAfterCareMinutes <= 60) {
@@ -289,6 +291,7 @@ public class InvoiceController {
                                             if (afterCareFullMorning != null && !afterCareFullMorning.isEmpty()) {
                                                 lineTotalCost = lineTotalCost.add(afterCareFullMorning.get(0).getItemValue());
                                                 lineItem.setServiceType("After Care Full Afternoon");
+                                                afterCareFullAfternoonLineItems.add(lineItem);
                                             }
                                         }
                                     } else {
@@ -322,7 +325,9 @@ public class InvoiceController {
                             break;
                         default:
                             List<PriceList> extraItemPrice = priceListRepository.getPriceLists(lineItem.getServiceType(), null);
-                            lineTotalCost = lineTotalCost.add(extraItemPrice.get(0).getItemValue());
+                            if (extraItemPrice != null && !extraItemPrice.isEmpty()) {
+                                lineTotalCost = lineTotalCost.add(extraItemPrice.get(0).getItemValue());
+                            }
                             break;
                     }
 
@@ -336,6 +341,94 @@ public class InvoiceController {
                         invoiceIDList.add(lineItem.get_id());
                     }
                 }
+                // TODO: Check with April if full week discount applies if different students comprise a full week
+                // TODO: Make sure this works if multiple students have full weeks
+
+                // First get family
+                Optional<Family> family = familyRepository.getFamily(invoice.getFamilyID());
+                if (family.isPresent()) {
+                    // Go through students in family
+                    for (String studentID : family.get().getStudents()) {
+                        List<Date> beforeCareFullMorningDates = new ArrayList<>();
+                        List<Date> afterCareFullAfternoonDates = new ArrayList<>();
+                        // Go through before care full morning line items to see if this student had any
+                        for (LineItem lineItem : beforeCareFullMorningLineItems) {
+                            if (lineItem.getStudentID().equals(studentID)) {
+                                beforeCareFullMorningDates.add(lineItem.getCheckIn());
+                            }
+                        }
+                        // Go through after care full afternoon line items to see if this student had any
+                        for (LineItem lineItem : afterCareFullAfternoonLineItems) {
+                            if (lineItem.getStudentID().equals(studentID)) {
+                                afterCareFullAfternoonDates.add(lineItem.getCheckIn());
+                            }
+                        }
+                        // Figure out how many (if any) before care full morning weeks this student had, and create line items for the discounts
+                        int numberOfFullMorningWeeks = checkForFullWeekDiscount(beforeCareFullMorningDates);
+                        for (int i = 0; i < numberOfFullMorningWeeks; i++) {
+                            LineItem fullMorningWeekDiscount = new LineItem();
+                            fullMorningWeekDiscount.setFamilyID(invoice.getFamilyID());
+                            fullMorningWeekDiscount.setStudentID(studentID);
+                            fullMorningWeekDiscount.setExtraItem(false);
+                            fullMorningWeekDiscount.setCheckIn(invoice.getInvoiceDate());
+                            fullMorningWeekDiscount.setCheckOut(invoice.getInvoiceDate());
+                            fullMorningWeekDiscount.setServiceType("Before Care Full Week");
+                            fullMorningWeekDiscount.setEarlyInLateOutFee(new BigDecimal(0));
+                            fullMorningWeekDiscount.setCheckInBy("Other");
+                            fullMorningWeekDiscount.setCheckOutBy("Other");
+                            fullMorningWeekDiscount.setNotes("");
+
+                            List<PriceList> extraItemPrice = priceListRepository.getPriceLists(fullMorningWeekDiscount.getServiceType(), null);
+                            if (extraItemPrice != null && !extraItemPrice.isEmpty()) {
+                                fullMorningWeekDiscount.setLineTotalCost(extraItemPrice.get(0).getItemValue().negate());
+
+                                LineItem lineItem1 = lineItemRepository.createLineItem(fullMorningWeekDiscount);
+                                if (lineItem1 == null || lineItem1.get_id() == null) {
+                                    logger.error("Error in 'createLineItem': error creating full morning week discount lineItem");
+                                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                                } else {
+                                    lineItemList.add(lineItem1);
+                                    totalInvoiceCost = totalInvoiceCost.add(lineItem1.getLineTotalCost());
+                                    invoiceIDList.add(lineItem1.get_id());
+                                }
+                            }
+                        }
+                        // Figure out how many (if any) after care full afternoon weeks this student had, and create line items for the discounts
+                        int numberOfFullAfternoonWeeks = checkForFullWeekDiscount(afterCareFullAfternoonDates);
+                        for (int i = 0; i < numberOfFullAfternoonWeeks; i++) {
+                            LineItem fullAfternoonWeekDiscount = new LineItem();
+                            fullAfternoonWeekDiscount.setFamilyID(invoice.getFamilyID());
+                            fullAfternoonWeekDiscount.setStudentID(studentID);
+                            fullAfternoonWeekDiscount.setExtraItem(false);
+                            fullAfternoonWeekDiscount.setCheckIn(invoice.getInvoiceDate());
+                            fullAfternoonWeekDiscount.setCheckOut(invoice.getInvoiceDate());
+                            fullAfternoonWeekDiscount.setServiceType("After Care Full Week");
+                            fullAfternoonWeekDiscount.setEarlyInLateOutFee(new BigDecimal(0));
+                            fullAfternoonWeekDiscount.setCheckInBy("Other");
+                            fullAfternoonWeekDiscount.setCheckOutBy("Other");
+                            fullAfternoonWeekDiscount.setNotes("");
+
+                            List<PriceList> extraItemPrice = priceListRepository.getPriceLists(fullAfternoonWeekDiscount.getServiceType(), null);
+                            if (extraItemPrice != null && !extraItemPrice.isEmpty()) {
+                                fullAfternoonWeekDiscount.setLineTotalCost(extraItemPrice.get(0).getItemValue().negate());
+
+                                LineItem lineItem1 = lineItemRepository.createLineItem(fullAfternoonWeekDiscount);
+                                if (lineItem1 == null || lineItem1.get_id() == null) {
+                                    logger.error("Error in 'createLineItem': error creating full afternoon week discount lineItem");
+                                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                                } else {
+                                    lineItemList.add(lineItem1);
+                                    totalInvoiceCost = totalInvoiceCost.add(lineItem1.getLineTotalCost());
+                                    invoiceIDList.add(lineItem1.get_id());
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    logger.error("Error in 'createInvoice': could not find family");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                }
+
                 invoice.setLineItemsID(invoiceIDList);
                 invoice.setTotalCost(totalInvoiceCost);
                 Invoice invoice1 = invoiceRepository.createInvoice(invoice);
@@ -348,7 +441,7 @@ public class InvoiceController {
                         LineItem result = lineItemRepository.updateLineItem(lineItem.get_id(), lineItem);
                         if (result == null) {
                             logger.error("Error in 'createInvoice': error adding invoice ID to line item");
-//                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                         }
                     }
                     HttpHeaders header = new HttpHeaders();
@@ -424,5 +517,40 @@ public class InvoiceController {
             logger.error("Caught " + e + " in 'deleteInvoice', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    private int checkForFullWeekDiscount(List<Date> dates) {
+        Collections.sort(dates);
+        int consecutiveDates = 0;
+        int numberOfFullWeeks = 0;
+        Date last = null;
+        Calendar c = Calendar.getInstance();
+
+        for (int i = 0; i < dates.size(); i++) {
+            c.setTime(dates.get(i));
+            c.set(Calendar.HOUR_OF_DAY, 0);
+            c.set(Calendar.MINUTE, 0);
+            c.set(Calendar.SECOND, 0);
+            c.set(Calendar.MILLISECOND, 0);
+            c.add(Calendar.DATE, -1);
+            if (c.getTime().equals(last)) {
+                consecutiveDates++;
+            } else {
+                consecutiveDates = 0;
+            }
+            if (consecutiveDates == 4) {
+                consecutiveDates = 0;
+                numberOfFullWeeks++;
+            }
+            Calendar lastCalendar = Calendar.getInstance();
+            lastCalendar.setTime(dates.get(i));
+            lastCalendar.set(Calendar.HOUR_OF_DAY, 0);
+            lastCalendar.set(Calendar.MINUTE, 0);
+            lastCalendar.set(Calendar.SECOND, 0);
+            lastCalendar.set(Calendar.MILLISECOND, 0);
+            last = lastCalendar.getTime();
+        }
+
+        return numberOfFullWeeks;
     }
 }
