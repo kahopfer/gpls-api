@@ -182,6 +182,7 @@ public class InvoiceController {
                                             BigDecimal earlyInFeeTotal = earlyInFee.get(0).getItemValue().multiply(earlyDropOffMinutesBigDecimal);
                                             lineTotalCost = lineTotalCost.add(earlyInFeeTotal);
                                         }
+                                        //TODO: Check for inclusivity
 
                                         long regularBeforeCareMinutes = 0L;
                                         // If the child was checked out before before care ended and after it started
@@ -343,6 +344,7 @@ public class InvoiceController {
                 }
                 // TODO: Check with April if full week discount applies if different students comprise a full week
                 // TODO: Make sure this works if multiple students have full weeks
+                // TODO: Make sure this works if student has two line items in the same day
 
                 // First get family
                 Optional<Family> family = familyRepository.getFamily(invoice.getFamilyID());
