@@ -342,8 +342,6 @@ public class InvoiceController {
                         invoiceIDList.add(lineItem.get_id());
                     }
                 }
-                // TODO: Check with April if full week discount applies if different students comprise a full week
-                // TODO: Make sure this works if multiple students have full weeks
                 // TODO: Make sure this works if student has two line items in the same day
 
                 // First get family
