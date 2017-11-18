@@ -8,12 +8,15 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,10 +45,21 @@ public class LineItemController {
                                                   @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
                                                   @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced,
                                                   @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType,
-                                                  @RequestParam(value = "invoiceID", defaultValue = "", required = false) final String invoiceID) {
+                                                  @RequestParam(value = "invoiceID", defaultValue = "", required = false) final String invoiceID,
+                                                  @RequestParam(value = "fromDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate fromDate,
+                                                  @RequestParam(value = "toDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate toDate) {
         try {
+            Date fromDate1 = null;
+            Date toDate1 = null;
+            if (fromDate != null) {
+                fromDate1 = java.sql.Date.valueOf(fromDate);
+            }
+            if (toDate != null) {
+                toDate1 = java.sql.Date.valueOf(toDate);
+            }
             final LineItems lineItems = new LineItems();
-            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced, serviceType, null, null, invoiceID);
+            final List<LineItem> lineItemList = lineItemRepository.getLineItems(familyID, studentID, checkedOut, invoiced,
+                    serviceType, fromDate1, toDate1, invoiceID);
             if (lineItemList == null) {
                 return ResponseEntity.ok(lineItems);
             }
@@ -90,6 +104,9 @@ public class LineItemController {
 //            } else if (!this.lineItemHelpers.inSameDay(lineItem.getCheckIn(), lineItem.getCheckOut())) {
 //                logger.error("Error in 'updateLineItem': check in time and check out time are not in the same day");
 //                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (lineItem.getCheckIn().after(new Date()) || lineItem.getCheckOut().after(new Date())) {
+                logger.error("Error in 'updateLineItem': check in time cannot be in the future");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(lineItem.get_id())) {
                 logger.error("Error in 'updateLineItem': id parameter does not match id in lineItem");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -125,12 +142,17 @@ public class LineItemController {
                 logger.error("Error in 'createLineItem': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (lineItem.getCheckOut() != null && lineItem.getCheckIn().after(lineItem.getCheckOut())) {
-                logger.error("Error in 'updateLineItem': check in time is later than check out time");
+                logger.error("Error in 'createLineItem': check in time is later than check out time");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//            } else if (!this.lineItemHelpers.inSameDay(lineItem.getCheckIn(), lineItem.getCheckOut())) {
-//                logger.error("Error in 'updateLineItem': check in time and check out time are not in the same day");
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (lineItem.getCheckIn().after(new Date())) {
+                logger.error("Error in 'createLineItem': check in time cannot be in the future");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (lineItem.getCheckOut() != null && lineItem.getCheckOut().after(new Date())) {
+                logger.error("Error in 'createLineItem': check out time cannot be in the future");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+//                List<LineItem> = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, lineItem.getCheckIn())
+
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
                 if (lineItem1 == null || lineItem1.get_id() == null) {
                     logger.error("Error in 'createLineItem': error creating lineItem");
