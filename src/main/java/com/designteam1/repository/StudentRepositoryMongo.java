@@ -23,7 +23,7 @@ public class StudentRepositoryMongo implements StudentRepository {
     private MongoTemplate mt;
 
     @Override
-    public List<Student> getStudents(final String familyUnitID, final String checkedIn) {
+    public List<Student> getStudents(final String familyUnitID, final String checkedIn, final String active) {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
@@ -32,6 +32,10 @@ public class StudentRepositoryMongo implements StudentRepository {
         if (StringUtils.isNotEmpty(checkedIn)) {
             Boolean checkedIn1 = Boolean.valueOf(checkedIn);
             query.addCriteria(Criteria.where("checkedIn").is(checkedIn1));
+        }
+        if (StringUtils.isNotEmpty(active)) {
+            Boolean active1 = Boolean.valueOf(active);
+            query.addCriteria(Criteria.where("active").is(active1));
         }
         return mt.find(query, Student.class, collectionName);
     }
@@ -83,6 +87,22 @@ public class StudentRepositoryMongo implements StudentRepository {
         final Update update = new Update();
 
         update.set("checkedIn", student.isCheckedIn());
+
+        final WriteResult result = mt.updateFirst(query, update, Student.class, collectionName);
+
+        if (result != null) {
+            return student;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public Student updateActive(String id, Student student) {
+        final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+        final Update update = new Update();
+
+        update.set("active", student.isActive());
 
         final WriteResult result = mt.updateFirst(query, update, Student.class, collectionName);
 

@@ -24,13 +24,17 @@ public class GuardianRepositoryMongo implements GuardianRepository {
 
 
     @Override
-    public List<Guardian> getGuardians(final String familyUnitID) {
+    public List<Guardian> getGuardians(final String familyUnitID, final String active) {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
 //            ObjectId objID = new ObjectId(familyUnitID);
 //            query.addCriteria(Criteria.where("familyUnitID").is(objID));
             query.addCriteria(Criteria.where("familyUnitID").is(familyUnitID));
+        }
+        if (StringUtils.isNotEmpty(active)) {
+            Boolean active1 = Boolean.valueOf(active);
+            query.addCriteria(Criteria.where("active").is(active1));
         }
         return mt.find(query, Guardian.class, collectionName);
     }
@@ -76,5 +80,21 @@ public class GuardianRepositoryMongo implements GuardianRepository {
     public Guardian deleteGuardian(Guardian guardian) {
         mt.remove(guardian, collectionName);
         return guardian;
+    }
+
+    @Override
+    public Guardian updateActive(String id, Guardian guardian) {
+        final Query query = new Query().addCriteria(Criteria.where("_id").is(id));
+        final Update update = new Update();
+
+        update.set("active", guardian.isActive());
+
+        final WriteResult result = mt.updateFirst(query, update, Guardian.class, collectionName);
+
+        if (result != null) {
+            return guardian;
+        } else {
+            return null;
+        }
     }
 }

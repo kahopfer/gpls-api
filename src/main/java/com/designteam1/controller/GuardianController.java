@@ -43,7 +43,7 @@ public class GuardianController {
     public ResponseEntity<Guardians> getGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
         try {
             final Guardians guardians = new Guardians();
-            final List<Guardian> guardianList = guardianRepository.getGuardians(familyUnitID);
+            final List<Guardian> guardianList = guardianRepository.getGuardians(familyUnitID, "true");
             if (guardianList == null) {
                 return ResponseEntity.ok(guardians);
             }
@@ -70,6 +70,22 @@ public class GuardianController {
         }
     }
 
+    @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Guardians> getInactiveGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
+        try {
+            final Guardians guardians = new Guardians();
+            final List<Guardian> guardianList = guardianRepository.getGuardians(familyUnitID, "false");
+            if (guardianList == null) {
+                return ResponseEntity.ok(guardians);
+            }
+            guardians.setGuardians(guardianList);
+            return ResponseEntity.ok(guardians);
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'getGuardians', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // SecPhone and middle initial are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardian> createGuardian(@RequestBody final Guardian guardian) {
@@ -77,7 +93,8 @@ public class GuardianController {
             if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
                     StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
-                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'createGuardian': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -116,7 +133,8 @@ public class GuardianController {
             if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
                     StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
-                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'createGuardian': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -143,7 +161,8 @@ public class GuardianController {
             if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
                     StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
-                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id())) {
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'updateGuardian': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(guardian.get_id())) {
@@ -205,6 +224,40 @@ public class GuardianController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteGuardian', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Guardian> updateActiveGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
+        try {
+            if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
+                    || StringUtils.isBlank(guardian.getRelationship()) ||
+                    StringUtils.isBlank(guardian.getPrimPhone()) || StringUtils.isBlank(guardian.getEmail()) ||
+                    StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
+                logger.error("Error in 'updateActiveGuardian': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(guardian.get_id())) {
+                logger.error("Error in 'updateActiveGuardian': id parameter does not match id in guardian");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Guardian> guardianOptional = guardianRepository.getGuardian(id);
+                if (!guardianOptional.isPresent()) {
+                    logger.error("Error in 'updateActiveGuardian': tried to update a guardian that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else {
+                    Guardian result = guardianRepository.updateActive(id, guardian);
+                    if (result == null) {
+                        logger.error("Error in 'updateActiveGuardian': error building guardian");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateActiveGuardian', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

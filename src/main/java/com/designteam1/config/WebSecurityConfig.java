@@ -61,17 +61,23 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/auth/**").permitAll()
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                .antMatchers(HttpMethod.GET, "/families/inactive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/families/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.PUT, "/families/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/families/updateActive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/families/**").access("hasRole('ROLE_ADMIN')")
 
+                .antMatchers(HttpMethod.GET, "/students/inactive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/students/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/students/updateActive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.PUT, "/students/updateStudent/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/students/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/students/enrollStudent/**").access("hasRole('ROLE_ADMIN')")
 
+                .antMatchers(HttpMethod.GET, "/guardians/inactive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/guardians/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.PUT, "/guardians/**").access("hasRole('ROLE_ADMIN')")
+                .antMatchers(HttpMethod.PUT, "/guardians/updateActive/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.DELETE, "/guardians/**").access("hasRole('ROLE_ADMIN')")
                 .antMatchers(HttpMethod.POST, "/guardians/enrollGuardian/**").access("hasRole('ROLE_ADMIN')")
 

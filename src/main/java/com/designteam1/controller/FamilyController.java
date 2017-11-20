@@ -54,7 +54,7 @@ public class FamilyController {
     public ResponseEntity<Families> getFamilies() {
         try {
             final Families families = new Families();
-            final List<Family> familyList = familyRepository.getFamilies();
+            final List<Family> familyList = familyRepository.getFamilies("true");
             if (familyList == null) {
                 return ResponseEntity.ok(families);
             }
@@ -81,11 +81,28 @@ public class FamilyController {
         }
     }
 
+    @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Families> getInactiveFamilies() {
+        try {
+            final Families families = new Families();
+            final List<Family> familyList = familyRepository.getFamilies("false");
+            if (familyList == null) {
+                return ResponseEntity.ok(families);
+            }
+            families.setFamilies(familyList);
+            return ResponseEntity.ok(families);
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'getFamilies', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Family> createFamily(@RequestBody final Family family) {
         try {
             if (family == null || StringUtils.isBlank(family.getFamilyName()) || family.getGuardians() == null || family.getGuardians().isEmpty() ||
-                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty()) {
+                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty() ||
+                    StringUtils.isBlank(String.valueOf(family.isActive()))) {
                 logger.error("Error in 'createFamily': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -110,7 +127,8 @@ public class FamilyController {
         try {
             if (family == null || id == null || StringUtils.isBlank(family.get_id()) ||
                     StringUtils.isBlank(family.getFamilyName()) || family.getGuardians() == null || family.getGuardians().isEmpty() ||
-                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty()) {
+                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty() ||
+                    StringUtils.isBlank(String.valueOf(family.isActive()))) {
                 logger.error("Error in 'updateFamily': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(family.get_id())) {
@@ -215,6 +233,69 @@ public class FamilyController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteFamily', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Family> updateActiveFamily(@PathVariable(name = "id") final String id, @RequestBody final Family family) {
+        try {
+            if (family == null || id == null || StringUtils.isBlank(family.get_id()) ||
+                    StringUtils.isBlank(family.getFamilyName()) || family.getGuardians() == null || family.getGuardians().isEmpty() ||
+                    StringUtils.isBlank(family.get_id()) || family.getStudents() == null || family.getStudents().isEmpty() ||
+                    StringUtils.isBlank(String.valueOf(family.isActive()))) {
+                logger.error("Error in 'updateActiveFamily': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(family.get_id())) {
+                logger.error("Error in 'updateActiveFamily': id parameter does not match id in family");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Family> familyOptional = familyRepository.getFamily(id);
+                if (!familyOptional.isPresent()) {
+                    logger.error("Error in 'updateActiveFamily': tried to update a family that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else {
+                    // Deactivate guardians
+                    for (String guardianID : familyOptional.get().getGuardians()) {
+                        Optional<Guardian> guardian = guardianRepository.getGuardian(guardianID);
+                        if (guardian.isPresent()) {
+                            guardian.get().setActive(family.isActive());
+                            Guardian result = guardianRepository.updateActive(guardian.get().get_id(), guardian.get());
+                            if (result == null) {
+                                logger.error("Error in 'updateActiveFamily': error building guardian");
+                                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            }
+                        } else {
+                            logger.error("Error in 'updateActiveFamily': guardian is null");
+                            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                        }
+                    }
+                    // Deactivate students
+                    for (String studentID : familyOptional.get().getStudents()) {
+                        Optional<Student> student = studentRepository.getStudent(studentID);
+                        if (student.isPresent()) {
+                            student.get().setActive(family.isActive());
+                            Student result = studentRepository.updateActive(student.get().get_id(), student.get());
+                            if (result == null) {
+                                logger.error("Error in 'deleteFamily': error building student");
+                                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            }
+                        } else {
+                            logger.error("Error in 'updateActiveFamily': student is null");
+                            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                        }
+                    }
+                    Family result = familyRepository.updateActive(id, family);
+                    if (result == null) {
+                        logger.error("Error in 'updateActiveFamily': error building family");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateActiveFamily', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

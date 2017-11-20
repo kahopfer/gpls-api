@@ -51,7 +51,7 @@ public class StudentController {
                                                 @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
-            final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn);
+            final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "true");
             if (studentList == null) {
                 return ResponseEntity.ok(students);
             }
@@ -78,13 +78,30 @@ public class StudentController {
         }
     }
 
+    @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Students> getInactiveStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
+                                                @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
+        try {
+            final Students students = new Students();
+            final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "false");
+            if (studentList == null) {
+                return ResponseEntity.ok(students);
+            }
+            students.setStudents(studentList);
+            return ResponseEntity.ok(students);
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'getStudents', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
     // Notes, middle initial, and birthdate are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
-                    || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.get_id()) || StringUtils.isBlank(String.valueOf(student.isActive()))) {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -122,7 +139,7 @@ public class StudentController {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
-                    || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.get_id()) || StringUtils.isBlank(String.valueOf(student.isActive()))) {
                 logger.error("Error in 'createStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
@@ -147,7 +164,8 @@ public class StudentController {
     public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id())) {
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
                 logger.error("Error in 'updateStudent': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(student.get_id())) {
@@ -176,7 +194,9 @@ public class StudentController {
     @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Student> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
-            if (student == null || id == null || StringUtils.isBlank(String.valueOf(student.isCheckedIn())) || StringUtils.isBlank(student.get_id())) {
+            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
                 logger.error("Error in 'updateCheckedIn': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else if (!id.equals(student.get_id())) {
@@ -245,6 +265,38 @@ public class StudentController {
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteStudent', " + e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Student> updateActiveStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+        try {
+            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
+                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
+                logger.error("Error in 'updateActiveStudent': missing required field");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else if (!id.equals(student.get_id())) {
+                logger.error("Error in 'updateActiveStudent': id parameter does not match id in student");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+            } else {
+                Optional<Student> studentOptional = studentRepository.getStudent(id);
+                if (!studentOptional.isPresent()) {
+                    logger.error("Error in 'updateActiveStudent': tried to update a student that does not exist");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                } else {
+                    Student result = studentRepository.updateActive(id, student);
+                    if (result == null) {
+                        logger.error("Error in 'updateActiveStudent': error building student");
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    } else {
+                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            logger.error("Caught " + e + " in 'updateActiveStudent', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }

@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GuardianRepository {
-    List<Guardian> getGuardians(final String FamilyUnitID);
+    List<Guardian> getGuardians(final String FamilyUnitID, final String active);
 
     Optional<Guardian> getGuardian(final String id);
 
@@ -15,4 +15,6 @@ public interface GuardianRepository {
     Guardian updateGuardian(String id, Guardian guardian);
 
     Guardian deleteGuardian(Guardian guardian);
+
+    Guardian updateActive(String id, Guardian guardian);
 }

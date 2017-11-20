@@ -461,7 +461,7 @@ public class InvoiceController {
             if (invoice == null || id == null || invoice.getInvoiceFromDate() == null || invoice.getInvoiceToDate() == null
                     || StringUtils.isBlank(invoice.getFamilyID()) || StringUtils.isBlank(String.valueOf(invoice.isPaid()))
                     || StringUtils.isBlank(invoice.get_id()) || invoice.getLineItemsID() == null || invoice.getLineItemsID().isEmpty()
-                    || invoice.getTotalCost() == null || StringUtils.isEmpty(String.valueOf(invoice.getTotalCost()))
+                    || invoice.getTotalCost() == null || StringUtils.isBlank(String.valueOf(invoice.getTotalCost()))
                     || invoice.getInvoiceDate() == null) {
                 logger.error("Error in 'updateInvoice': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -519,6 +519,7 @@ public class InvoiceController {
         }
     }
 
+    // TODO: Remove duplicates
     private int checkForFullWeekDiscount(List<Date> dates) {
         Collections.sort(dates);
         int consecutiveDates = 0;

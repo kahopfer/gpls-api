@@ -10,6 +10,7 @@ public class Guardian {
     private String secPhone;
     private String email;
     private String familyUnitID;
+    private boolean active;
 
     public String get_id() {
         return _id;
@@ -81,5 +82,13 @@ public class Guardian {
 
     public void setFamilyUnitID(String familyUnitID) {
         this.familyUnitID = familyUnitID;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

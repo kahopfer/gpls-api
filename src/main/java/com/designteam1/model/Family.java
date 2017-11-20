@@ -7,6 +7,7 @@ public class Family {
     private String familyName;
     private List<String> students;
     private List<String> guardians;
+    private boolean active;
 
     public String get_id() {
         return _id;
@@ -38,5 +39,13 @@ public class Family {
 
     public void setGuardians(List<String> guardians) {
         this.guardians = guardians;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

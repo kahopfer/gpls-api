@@ -11,6 +11,7 @@ public class Student {
     private String notes;
     private boolean checkedIn;
     private String familyUnitID;
+    private boolean active;
 
     public String get_id() {
         return _id;
@@ -74,5 +75,13 @@ public class Student {
 
     public void setCheckedIn(boolean checkedIn) {
         this.checkedIn = checkedIn;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }
