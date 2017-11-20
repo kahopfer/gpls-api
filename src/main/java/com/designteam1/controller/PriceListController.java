@@ -89,7 +89,8 @@ public class PriceListController {
             } else {
                 Optional<PriceList> priceListOptional = priceListRepository.getPriceList(id);
                 if (!priceListOptional.isPresent()) {
-                    return this.createPriceList(priceList);
+                    logger.error("Error in 'createPriceList': could not find price list to update");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
                     PriceList result = priceListRepository.updatePriceList(id, priceList);
                     if (result == null) {

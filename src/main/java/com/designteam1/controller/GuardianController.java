@@ -100,12 +100,17 @@ public class GuardianController {
             } else {
                 Optional<Family> guardianFamily = familyRepository.getFamily(guardian.getFamilyUnitID());
                 if (guardianFamily.isPresent()) {
+                    if (!guardianFamily.get().isActive()) {
+                        logger.error("Error in 'createGuardian': cannot add a guardian to an inactive family");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     guardianFamily.get().getGuardians().add(guardian.get_id());
                     Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
                     if (familyResult == null) {
                         logger.error("Error in 'createGuardian': error adding ID to family record");
                         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
                     } else {
+                        guardian.setActive(true);
                         Guardian guardian1 = guardianRepository.createGuardian(guardian);
                         if (guardian1 == null || guardian1.get_id() == null) {
                             logger.error("Error in 'createGuardian': error creating guardian");
@@ -138,6 +143,7 @@ public class GuardianController {
                 logger.error("Error in 'createGuardian': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+                guardian.setActive(true);
                 Guardian guardian1 = guardianRepository.createGuardian(guardian);
                 if (guardian1 == null || guardian1.get_id() == null) {
                     logger.error("Error in 'createGuardian': error enrolling guardian");
@@ -171,8 +177,13 @@ public class GuardianController {
             } else {
                 Optional<Guardian> guardianOptional = guardianRepository.getGuardian(id);
                 if (!guardianOptional.isPresent()) {
-                    return this.createGuardian(guardian);
+                    logger.error("Error in 'updateGuardian': could not find guardian to update");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
+                    if (!guardianOptional.get().isActive()) {
+                        logger.error("Error in 'updateGuardian': cannot update an inactive guardian");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     Guardian result = guardianRepository.updateGuardian(id, guardian);
                     if (result == null) {
                         logger.error("Error in 'updateGuardian': error building guardian");
@@ -188,45 +199,45 @@ public class GuardianController {
         }
     }
 
-    @DeleteMapping(value = "{id}")
-    public ResponseEntity<Void> deleteGuardian(@PathVariable(name = "id") final String id) {
-        try {
-            Optional<Guardian> guardian = guardianRepository.getGuardian(id);
-            if (guardian.isPresent()) {
-                Optional<Family> guardianFamily = familyRepository.getFamily(guardian.get().getFamilyUnitID());
-                if (guardianFamily.isPresent()) {
-                    if (guardianFamily.get().getGuardians().size() == 1) {
-                        logger.error("Error in 'deleteGuardian': a family must have at least 1 guardian");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-                    }
-                    // Remove guardianID from family record
-                    guardianFamily.get().getGuardians().removeIf(s -> s.equals(guardian.get().get_id()));
-                    Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
-                    if (familyResult == null) {
-                        logger.error("Error in 'deleteGuardian': error updating family record");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-                    } else {
-                        Guardian result = guardianRepository.deleteGuardian(guardian.get());
-                        if (result == null) {
-                            logger.error("Error in 'deleteGuardian': error deleting guardian");
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-                        } else {
-                            return ResponseEntity.status(HttpStatus.OK).body(null);
-                        }
-                    }
-                } else {
-                    logger.error("Error in 'deleteGuardian': cannot find family associated to guardian");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-                }
-            } else {
-                logger.error("Error in 'deleteGuardian': guardian is null");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-        } catch (final Exception e) {
-            logger.error("Caught " + e + " in 'deleteGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
+//    @DeleteMapping(value = "{id}")
+//    public ResponseEntity<Void> deleteGuardian(@PathVariable(name = "id") final String id) {
+//        try {
+//            Optional<Guardian> guardian = guardianRepository.getGuardian(id);
+//            if (guardian.isPresent()) {
+//                Optional<Family> guardianFamily = familyRepository.getFamily(guardian.get().getFamilyUnitID());
+//                if (guardianFamily.isPresent()) {
+//                    if (guardianFamily.get().getGuardians().size() == 1) {
+//                        logger.error("Error in 'deleteGuardian': a family must have at least 1 guardian");
+//                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+//                    }
+//                    // Remove guardianID from family record
+//                    guardianFamily.get().getGuardians().removeIf(s -> s.equals(guardian.get().get_id()));
+//                    Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
+//                    if (familyResult == null) {
+//                        logger.error("Error in 'deleteGuardian': error updating family record");
+//                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//                    } else {
+//                        Guardian result = guardianRepository.deleteGuardian(guardian.get());
+//                        if (result == null) {
+//                            logger.error("Error in 'deleteGuardian': error deleting guardian");
+//                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//                        } else {
+//                            return ResponseEntity.status(HttpStatus.OK).body(null);
+//                        }
+//                    }
+//                } else {
+//                    logger.error("Error in 'deleteGuardian': cannot find family associated to guardian");
+//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+//                }
+//            } else {
+//                logger.error("Error in 'deleteGuardian': guardian is null");
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+//            }
+//        } catch (final Exception e) {
+//            logger.error("Caught " + e + " in 'deleteGuardian', " + e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+//        }
+//    }
 
     @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Guardian> updateActiveGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {

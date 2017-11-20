@@ -106,6 +106,7 @@ public class FamilyController {
                 logger.error("Error in 'createFamily': missing required field");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+                family.setActive(true);
                 Family family1 = familyRepository.createFamily(family);
                 if (family1 == null || family1.get_id() == null) {
                     logger.error("Error in 'createFamily': error creating family");
@@ -137,8 +138,13 @@ public class FamilyController {
             } else {
                 Optional<Family> familyOptional = familyRepository.getFamily(id);
                 if (!familyOptional.isPresent()) {
-                    return this.createFamily(family);
+                    logger.error("Error in 'updateFamily': could not find family to update");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
+                    if (!familyOptional.get().isActive()) {
+                        logger.error("Error in 'updateFamily': cannot update an inactive family");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     Family result = familyRepository.updateFamily(id, family);
                     if (result == null) {
                         logger.error("Error in 'updateFamily': error building family");
@@ -255,6 +261,19 @@ public class FamilyController {
                     logger.error("Error in 'updateActiveFamily': tried to update a family that does not exist");
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
+                    // Check for uninvoiced line items
+                    List<LineItem> uninvoicedLineItemList = lineItemRepository.getLineItems(familyOptional.get().get_id(), null,
+                            null, "null", null, null, null, null);
+                    if (familyOptional.get().isActive() && !family.isActive() && !uninvoicedLineItemList.isEmpty()) {
+                        logger.error("Error in 'updateActiveFamily': you cannot deactivate a family with uninvoiced line items");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
+                    // Check for unpaid invoices
+                    List<Invoice> unpaidInvoiceList = invoiceRepository.getInvoices(familyOptional.get().get_id(), "false");
+                    if (familyOptional.get().isActive() && !family.isActive() && !unpaidInvoiceList.isEmpty()) {
+                        logger.error("Error in 'updateActiveFamily': you cannot deactivate a family with unpaid invoices");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     // Deactivate guardians
                     for (String guardianID : familyOptional.get().getGuardians()) {
                         Optional<Guardian> guardian = guardianRepository.getGuardian(guardianID);

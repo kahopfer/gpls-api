@@ -113,7 +113,8 @@ public class LineItemController {
             } else {
                 Optional<LineItem> lineItemOptional = lineItemRepository.getLineItem(id);
                 if (!lineItemOptional.isPresent()) {
-                    return this.createLineItem(lineItem);
+                    logger.error("Error in 'updateLineItem': could not find line item to update");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
                     LineItem result = lineItemRepository.updateLineItem(id, lineItem);
                     if (result == null) {
