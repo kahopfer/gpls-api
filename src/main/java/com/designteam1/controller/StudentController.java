@@ -307,6 +307,11 @@ public class StudentController {
                         logger.error("Error in 'updateActiveStudent': you cannot deactivate a student with uninvoiced line items");
                         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
                     }
+                    List<Student> activeStudents = studentRepository.getStudents(studentOptional.get().getFamilyUnitID(), null, "true");
+                    if (studentOptional.get().isActive() && !student.isActive() && activeStudents.size() == 1) {
+                        logger.error("Error in 'updateActiveStudent': a family must have at least 1 active student");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     Student result = studentRepository.updateActive(id, student);
                     if (result == null) {
                         logger.error("Error in 'updateActiveStudent': error building student");

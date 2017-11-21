@@ -1,10 +1,7 @@
 package com.designteam1.controller;
 
 import com.designteam1.model.*;
-import com.designteam1.repository.FamilyRepository;
-import com.designteam1.repository.InvoiceRepository;
-import com.designteam1.repository.LineItemRepository;
-import com.designteam1.repository.PriceListRepository;
+import com.designteam1.repository.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
@@ -32,11 +29,13 @@ public class InvoiceController {
     }
 
     public InvoiceController(final InvoiceRepository invoiceRepository, final LineItemRepository lineItemRepository,
-                             final PriceListRepository priceListRepository, final FamilyRepository familyRepository) {
+                             final PriceListRepository priceListRepository, final FamilyRepository familyRepository,
+                             final StudentRepository studentRepository) {
         this.invoiceRepository = invoiceRepository;
         this.lineItemRepository = lineItemRepository;
         this.priceListRepository = priceListRepository;
         this.familyRepository = familyRepository;
+        this.studentRepository = studentRepository;
     }
 
     @Autowired
@@ -50,6 +49,9 @@ public class InvoiceController {
 
     @Autowired
     FamilyRepository familyRepository;
+
+    @Autowired
+    StudentRepository studentRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Invoices> getInvoices(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
@@ -304,24 +306,19 @@ public class InvoiceController {
                             }
                             break;
                         case "Annual Registration Fee":
-                            Optional<Family> family = familyRepository.getFamily(lineItem.getFamilyID());
-                            if (family.isPresent()) {
-                                if (family.get().getStudents().size() > 1) {
-                                    List<PriceList> familyRegistrationFee = priceListRepository.getPriceLists("Annual Registration Fee (Family)", null);
-                                    if (familyRegistrationFee != null && !familyRegistrationFee.isEmpty()) {
-                                        lineTotalCost = lineTotalCost.add(familyRegistrationFee.get(0).getItemValue());
-                                        lineItem.setServiceType("Annual Registration Fee (Family)");
-                                    }
-                                } else {
-                                    List<PriceList> familyRegistrationFee = priceListRepository.getPriceLists("Annual Registration Fee (Single)", null);
-                                    if (familyRegistrationFee != null && !familyRegistrationFee.isEmpty()) {
-                                        lineTotalCost = lineTotalCost.add(familyRegistrationFee.get(0).getItemValue());
-                                        lineItem.setServiceType("Annual Registration Fee (Single)");
-                                    }
+                            List<Student> activeStudents = this.studentRepository.getStudents(lineItem.getFamilyID(), null, "true");
+                            if (activeStudents.size() > 1) {
+                                List<PriceList> familyRegistrationFee = priceListRepository.getPriceLists("Annual Registration Fee (Family)", null);
+                                if (familyRegistrationFee != null && !familyRegistrationFee.isEmpty()) {
+                                    lineTotalCost = lineTotalCost.add(familyRegistrationFee.get(0).getItemValue());
+                                    lineItem.setServiceType("Annual Registration Fee (Family)");
                                 }
                             } else {
-                                logger.error("Error in 'createInvoice': could not find family");
-                                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                                List<PriceList> familyRegistrationFee = priceListRepository.getPriceLists("Annual Registration Fee (Single)", null);
+                                if (familyRegistrationFee != null && !familyRegistrationFee.isEmpty()) {
+                                    lineTotalCost = lineTotalCost.add(familyRegistrationFee.get(0).getItemValue());
+                                    lineItem.setServiceType("Annual Registration Fee (Single)");
+                                }
                             }
                             break;
                         default:

@@ -258,6 +258,11 @@ public class GuardianController {
                     logger.error("Error in 'updateActiveGuardian': tried to update a guardian that does not exist");
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 } else {
+                    List<Guardian> activeGuardians = guardianRepository.getGuardians(guardianOptional.get().getFamilyUnitID(),  "true");
+                    if (guardianOptional.get().isActive() && !guardian.isActive() && activeGuardians.size() == 1) {
+                        logger.error("Error in 'updateActiveGuardian': a family must have at least 1 active guardian");
+                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    }
                     Guardian result = guardianRepository.updateActive(id, guardian);
                     if (result == null) {
                         logger.error("Error in 'updateActiveGuardian': error building guardian");
