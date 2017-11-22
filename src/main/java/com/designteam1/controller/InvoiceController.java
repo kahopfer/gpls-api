@@ -199,7 +199,7 @@ public class InvoiceController {
                                                 lineItem.setServiceType("Before Care After 7:45");
                                             }
                                             // If the child was checked out after before care ended
-                                        } else if (checkOutCalendar.getTimeInMillis() > beforeCareEndCalendar.getTimeInMillis()) {
+                                        } else if (checkOutCalendar.getTimeInMillis() >= beforeCareEndCalendar.getTimeInMillis()) {
                                             // If the child was checked in after before care started and before or at 7:45
                                             if (checkInCalendar.getTimeInMillis() > beforeCareStartCalendar.getTimeInMillis() && checkInCalendar.getTimeInMillis() <= beforeCareEndBillingCalendar.getTimeInMillis()) {
                                                 regularBeforeCareMinutes = TimeUnit.MILLISECONDS.toMinutes(beforeCareEndCalendar.getTimeInMillis() - checkInCalendar.getTimeInMillis());
@@ -271,7 +271,7 @@ public class InvoiceController {
                                                 regularAfterCareMinutes = TimeUnit.MILLISECONDS.toMinutes(checkOutCalendar.getTimeInMillis() - afterCareStartCalendar.getTimeInMillis());
                                             }
                                             // If the child was checked out after after care ended
-                                        } else if (checkOutCalendar.getTimeInMillis() > afterCareEndCalendar.getTimeInMillis()) {
+                                        } else if (checkOutCalendar.getTimeInMillis() >= afterCareEndCalendar.getTimeInMillis()) {
                                             // If the child was checked in after after care started
                                             if (checkInCalendar.getTimeInMillis() > afterCareStartCalendar.getTimeInMillis()) {
                                                 regularAfterCareMinutes = TimeUnit.MILLISECONDS.toMinutes(afterCareEndCalendar.getTimeInMillis() - checkInCalendar.getTimeInMillis());
