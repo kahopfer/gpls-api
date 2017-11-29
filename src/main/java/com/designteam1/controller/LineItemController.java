@@ -111,6 +111,17 @@ public class LineItemController {
                 logger.error("Error in 'updateLineItem': id parameter does not match id in lineItem");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
+                List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, null, null, null);
+                if (currentLineItems != null && !currentLineItems.isEmpty()) {
+                    for (LineItem lineItem1 : currentLineItems) {
+                        if (!(lineItem.get_id().equals(lineItem1.get_id()))) {
+                            if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
+                                logger.error("Error in 'updateLineItem': time is overlapping with existing line item");
+                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                            }
+                        }
+                    }
+                }
                 Optional<LineItem> lineItemOptional = lineItemRepository.getLineItem(id);
                 if (!lineItemOptional.isPresent()) {
                     logger.error("Error in 'updateLineItem': could not find line item to update");
@@ -152,8 +163,17 @@ public class LineItemController {
                 logger.error("Error in 'createLineItem': check out time cannot be in the future");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
             } else {
-//                List<LineItem> = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, lineItem.getCheckIn())
-
+                if (lineItem.getCheckOut() != null) {
+                    List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, null, null, null);
+                    if (currentLineItems != null && !currentLineItems.isEmpty()) {
+                        for (LineItem lineItem1 : currentLineItems) {
+                            if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
+                                logger.error("Error in 'createLineItem': time is overlapping with existing line item");
+                                return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                            }
+                        }
+                    }
+                }
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
                 if (lineItem1 == null || lineItem1.get_id() == null) {
                     logger.error("Error in 'createLineItem': error creating lineItem");
@@ -195,5 +215,13 @@ public class LineItemController {
             logger.error("Caught " + e + " in 'deleteLineItem', " + e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    private static boolean isOverlapping(Date start1, Date end1, Date start2, Date end2) {
+        // If the student is currently signed in, they will not have a sign out time yet
+        if (end2 == null) {
+            end2 = new Date();
+        }
+        return start1.before(end2) && start2.before(end1);
     }
 }
