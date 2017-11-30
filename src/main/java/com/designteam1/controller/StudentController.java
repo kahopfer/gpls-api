@@ -1,9 +1,6 @@
 package com.designteam1.controller;
 
-import com.designteam1.model.Family;
-import com.designteam1.model.LineItem;
-import com.designteam1.model.Student;
-import com.designteam1.model.Students;
+import com.designteam1.model.*;
 import com.designteam1.repository.FamilyRepository;
 import com.designteam1.repository.LineItemRepository;
 import com.designteam1.repository.StudentRepository;
@@ -47,194 +44,194 @@ public class StudentController {
     private LineItemRepository lineItemRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Students> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
+    public ResponseEntity<ApiResponse> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
                                                 @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
             final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "true");
             if (studentList == null) {
-                return ResponseEntity.ok(students);
+                return new ApiResponse(students).send(HttpStatus.OK);
             }
             students.setStudents(studentList);
-            return ResponseEntity.ok(students);
+            return new ApiResponse(students).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getStudents', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the students");
         }
     }
 
     @GetMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> getStudent(@PathVariable(name = "id") final String id) {
+    public ResponseEntity<ApiResponse> getStudent(@PathVariable(name = "id") final String id) {
         try {
             final Optional<Student> student = studentRepository.getStudent(id);
             if (!student.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were looking for");
             } else {
-                return ResponseEntity.ok(student.get());
+                return new ApiResponse(student.get()).send(HttpStatus.OK);
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getStudent', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the student");
         }
     }
 
     @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Students> getInactiveStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
+    public ResponseEntity<ApiResponse> getInactiveStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
                                                         @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
             final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "false");
             if (studentList == null) {
-                return ResponseEntity.ok(students);
+                return new ApiResponse(students).send(HttpStatus.OK);
             }
             students.setStudents(studentList);
-            return ResponseEntity.ok(students);
+            return new ApiResponse(students).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getStudents', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the inactive students");
         }
     }
 
     // Notes, middle initial, and birthdate are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> createStudent(@RequestBody final Student student) {
+    public ResponseEntity<ApiResponse> createStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
                     || StringUtils.isBlank(student.get_id()) || StringUtils.isBlank(String.valueOf(student.isActive()))) {
                 logger.error("Error in 'createStudent': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 Optional<Family> studentFamily = familyRepository.getFamily(student.getFamilyUnitID());
                 if (studentFamily.isPresent()) {
                     if (!studentFamily.get().isActive()) {
                         logger.error("Error in 'createStudent': cannot add a student to an inactive family");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot add a student to an inactive family");
                     }
                     studentFamily.get().getStudents().add(student.get_id());
                     Family familyResult = familyRepository.updateFamily(studentFamily.get().get_id(), studentFamily.get());
                     if (familyResult == null) {
                         logger.error("Error in 'createStudent': error adding ID to family record");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "Error adding ID to family record");
                     } else {
                         student.setActive(true);
                         Student student1 = studentRepository.createStudent(student);
                         if (student1 == null || student1.get_id() == null) {
                             logger.error("Error in 'createStudent': error creating student");
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the student");
                         } else {
                             HttpHeaders header = new HttpHeaders();
                             header.add("location", student1.get_id());
-                            return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                            return new ApiResponse().send(HttpStatus.CREATED);
                         }
                     }
                 } else {
                     logger.error("Error in 'createStudent': could not find family associated to student");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the family associated to the student");
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createStudent', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the student");
         }
     }
 
     @PostMapping(value = "enrollStudent", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> enrollStudent(@RequestBody final Student student) {
+    public ResponseEntity<ApiResponse> enrollStudent(@RequestBody final Student student) {
         try {
             if (student == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))
                     || StringUtils.isBlank(student.get_id()) || StringUtils.isBlank(String.valueOf(student.isActive()))) {
                 logger.error("Error in 'createStudent': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 student.setActive(true);
                 Student student1 = studentRepository.createStudent(student);
                 if (student1 == null || student1.get_id() == null) {
                     logger.error("Error in 'createStudent': error enrolling student");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while enrolling the student");
                 } else {
                     HttpHeaders header = new HttpHeaders();
                     header.add("location", student1.get_id());
-                    return new ResponseEntity<Student>(null, header, HttpStatus.CREATED);
+                    return new ApiResponse().send(HttpStatus.CREATED);
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createStudent', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while enrolling the guardian");
         }
     }
 
     // Notes, middle initial, checkedIn, and birthdate are not required
     @PutMapping(value = "updateStudent/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+    public ResponseEntity<ApiResponse> updateStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
                     StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
                 logger.error("Error in 'updateStudent': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(student.get_id())) {
                 logger.error("Error in 'updateStudent': id parameter does not match id in student");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
             } else {
                 Optional<Student> studentOptional = studentRepository.getStudent(id);
                 if (!studentOptional.isPresent()) {
                     logger.error("Error in 'updateStudent': could not find student to update");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Cannot find the student you were trying to update");
                 } else {
                     if (!studentOptional.get().isActive()) {
                         logger.error("Error in 'updateStudent': cannot update an inactive student");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot update an inactive student");
                     }
                     Student result = studentRepository.updateStudent(id, student);
                     if (result == null) {
                         logger.error("Error in 'updateStudent': error building student");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the student");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateStudent', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the student");
         }
     }
 
     @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+    public ResponseEntity<ApiResponse> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
                     StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
                 logger.error("Error in 'updateCheckedIn': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(student.get_id())) {
                 logger.error("Error in 'updateCheckedIn': id parameter does not match id in student");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
             } else {
                 Optional<Student> studentOptional = studentRepository.getStudent(id);
                 if (!studentOptional.isPresent()) {
                     logger.error("Error in 'updateCheckedIn': tried to check in/out a student that does not exist");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to check in/out");
                 } else {
                     if (!studentOptional.get().isActive()) {
                         logger.error("Error in 'updateCheckedIn': cannot check in an inactive student");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot check in an inactive student");
                     }
                     Student result = studentRepository.updateCheckedIn(id, student);
                     if (result == null) {
                         logger.error("Error in 'updateCheckedIn': error building student");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateCheckedIn', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
         }
     }
 
@@ -285,45 +282,45 @@ public class StudentController {
 //    }
 
     @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Student> updateActiveStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+    public ResponseEntity<ApiResponse> updateActiveStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
         try {
             if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
                     || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
                     StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
                 logger.error("Error in 'updateActiveStudent': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(student.get_id())) {
                 logger.error("Error in 'updateActiveStudent': id parameter does not match id in student");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
             } else {
                 Optional<Student> studentOptional = studentRepository.getStudent(id);
                 if (!studentOptional.isPresent()) {
                     logger.error("Error in 'updateActiveStudent': tried to update a student that does not exist");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to update");
                 } else {
                     List<LineItem> uninvoicedLineItems = lineItemRepository.getLineItems(null, studentOptional.get().get_id(),
                             null, "null", null, null, null, null);
                     if (studentOptional.get().isActive() && !student.isActive() && uninvoicedLineItems.size() > 0) {
                         logger.error("Error in 'updateActiveStudent': you cannot deactivate a student with uninvoiced line items");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot deactivate a student with uninvoiced line items");
                     }
                     List<Student> activeStudents = studentRepository.getStudents(studentOptional.get().getFamilyUnitID(), null, "true");
                     if (studentOptional.get().isActive() && !student.isActive() && activeStudents.size() == 1) {
                         logger.error("Error in 'updateActiveStudent': a family must have at least 1 active student");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "A family must have at least 1 active student");
                     }
                     Student result = studentRepository.updateActive(id, student);
                     if (result == null) {
                         logger.error("Error in 'updateActiveStudent': error building student");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the student");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateActiveStudent', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the student");
         }
     }
 }

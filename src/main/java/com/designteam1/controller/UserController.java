@@ -1,5 +1,6 @@
 package com.designteam1.controller;
 
+import com.designteam1.model.ApiResponse;
 import com.designteam1.model.User;
 import com.designteam1.model.Users;
 import com.designteam1.repository.UserRepository;
@@ -39,55 +40,55 @@ public class UserController {
     private JwtTokenUtil jwtTokenUtil;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Users> getUsers() {
+    public ResponseEntity<ApiResponse> getUsers() {
         try {
             final Users users = new Users();
             final List<User> userList = userRepository.getUsers();
             if (userList == null) {
-                return ResponseEntity.ok(users);
+                return new ApiResponse(users).send(HttpStatus.OK);
             }
             users.setUsers(userList);
-            return ResponseEntity.ok(users);
+            return new ApiResponse(users).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getUsers', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the users");
         }
     }
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> createUser(@RequestBody final User user) {
+    public ResponseEntity<ApiResponse> createUser(@RequestBody final User user) {
         try {
             if (user == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword()) ||
                     StringUtils.isBlank(user.getFirstname()) || StringUtils.isBlank(user.getLastname()) || user.getAuthorities() == null || user.getAuthorities().isEmpty()) {
                 logger.error("Error in 'createUser': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 user.setUsername(user.getUsername().toUpperCase());
                 Optional<User> userList = userRepository.findByUsername(user.getUsername());
                 if (userList.isPresent()) {
                     logger.error("Error in 'createUser': username already exists");
-                    return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
+                    return new ApiResponse().send(HttpStatus.CONFLICT, "A user already exists with that username");
                 }
 
                 user.setLastPasswordResetDate(new Date());
                 User user1 = userRepository.createUser(user);
                 if (user1 == null || user1.getId() == null) {
                     logger.error("Error in 'createUser': error creating user");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the user");
                 } else {
                     HttpHeaders header = new HttpHeaders();
                     header.add("location", user1.getId());
-                    return new ResponseEntity<User>(null, header, HttpStatus.CREATED);
+                    return new ApiResponse().send(HttpStatus.CREATED);
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createUser', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the user");
         }
     }
 
     @DeleteMapping(value = "{userToDelete}")
-    public ResponseEntity<Void> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @RequestHeader("Authorization") String authToken) {
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable(name = "userToDelete") final String userToDelete, @RequestHeader("Authorization") String authToken) {
         try {
             // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
             if (authToken.startsWith("Bearer ")) {
@@ -100,26 +101,26 @@ public class UserController {
                 User result = userRepository.deleteUser(user.get());
                 if (result == null) {
                     logger.error("Error in 'deleteUser': error deleting user");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting the user");
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    return new ApiResponse().send(HttpStatus.OK);
                 }
             } else if (userToDelete.equals(myUsername)) {
                 logger.error("Error in 'deleteUser': user tried to delete themselves");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "You cannot delete yourself from the system");
             } else {
                 logger.error("Error in 'deleteUser': user is null");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the user you were trying to delete the user");
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteUser', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting the user");
         }
     }
 
     //TODO: Make sure this logic is sound
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> changePassword(@RequestHeader("Old-Password") final String oldPassword,
+    public ResponseEntity<ApiResponse> changePassword(@RequestHeader("Old-Password") final String oldPassword,
                                                @RequestBody final User user, @RequestHeader("Authorization") String authToken) {
         try {
             // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
@@ -131,63 +132,73 @@ public class UserController {
 
             if (user == null || oldPassword == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
                 logger.error("Error in 'changePassword': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!userToUpdate.equals(user.getUsername())) {
                 logger.error("Error in 'changePassword': username in auth token does not match username in user");
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
+                return new ApiResponse().send(HttpStatus.FORBIDDEN, "Username in authorization token does not match username in user");
             } else {
                 Optional<User> userOptional = userRepository.findByUsername(userToUpdate);
                 if (!userOptional.isPresent()) {
                     logger.error("Error in 'changePassword': tried to update a user that does not exist");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the user you were trying to update");
                 } else if (!userOptional.get().getPassword().equals(oldPassword)) {
                     logger.error("Error in 'changePassword': old password was incorrect");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Old password was incorrect");
                 } else {
                     user.setLastPasswordResetDate(new Date());
                     User result = userRepository.updateUser(userToUpdate, user);
                     if (result == null) {
                         logger.error("Error in 'changePassword': error building user");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while changing the password");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'changePassword', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while changing the password");
         }
     }
 
     @PutMapping(value = "resetPassword/{userToUpdate}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<User> resetPassword(@PathVariable(name = "userToUpdate") final String userToUpdate, @RequestBody final User user) {
+    public ResponseEntity<ApiResponse> resetPassword(@PathVariable(name = "userToUpdate") final String userToUpdate,
+                                                     @RequestBody final User user, @RequestHeader("Authorization") String authToken) {
         try {
+            // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
+            if (authToken.startsWith("Bearer ")) {
+                authToken = authToken.substring(7);
+            }
+
+            String yourUsername = jwtTokenUtil.getUsernameFromToken(authToken);
             if (user == null || userToUpdate == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
                 logger.error("Error in 'resetPassword': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if(!userToUpdate.equals(user.getUsername())) {
                 logger.error("Error in 'resetPassword': username parameter does not match username in user");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Username password does not match username in user");
+            } else if (yourUsername.equals(userToUpdate)) {
+                logger.error("Error in 'resetPassword': username parameter does not match username in user");
+                return new ApiResponse().send(HttpStatus.FORBIDDEN, "You cannot reset your own password");
             } else {
                 Optional<User> userOptional = userRepository.findByUsername(userToUpdate);
                 if (!userOptional.isPresent()) {
                     logger.error("Error in 'resetPassword': tried to update a user that does not exist");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the user you were trying to update");
                 } else {
                     user.setLastPasswordResetDate(new Date());
                     User result = userRepository.updateUser(userToUpdate, user);
                     if (result == null) {
                         logger.error("Error in 'resetPassword': error building user");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while resetting the password");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'resetPassword', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while resetting the password");
         }
     }
 }

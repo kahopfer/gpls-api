@@ -1,5 +1,6 @@
 package com.designteam1.controller;
 
+import com.designteam1.model.ApiResponse;
 import com.designteam1.model.Family;
 import com.designteam1.model.Guardian;
 import com.designteam1.model.Guardians;
@@ -40,55 +41,55 @@ public class GuardianController {
     private FamilyRepository familyRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardians> getGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
+    public ResponseEntity<ApiResponse> getGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
         try {
             final Guardians guardians = new Guardians();
             final List<Guardian> guardianList = guardianRepository.getGuardians(familyUnitID, "true");
             if (guardianList == null) {
-                return ResponseEntity.ok(guardians);
+                return new ApiResponse(guardians).send(HttpStatus.OK);
             }
             guardians.setGuardians(guardianList);
-            return ResponseEntity.ok(guardians);
+            return new ApiResponse(guardians).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getGuardians', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the guardians");
         }
     }
 
     @GetMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardian> getGuardian(@PathVariable(name = "id") final String id) {
+    public ResponseEntity<ApiResponse> getGuardian(@PathVariable(name = "id") final String id) {
         try {
             final Optional<Guardian> guardian = guardianRepository.getGuardian(id);
             if (!guardian.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the guardian you were looking for");
             } else {
-                return ResponseEntity.ok(guardian.get());
+                return new ApiResponse(guardian.get()).send(HttpStatus.OK);
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the guardian");
         }
     }
 
     @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardians> getInactiveGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
+    public ResponseEntity<ApiResponse> getInactiveGuardians(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID) {
         try {
             final Guardians guardians = new Guardians();
             final List<Guardian> guardianList = guardianRepository.getGuardians(familyUnitID, "false");
             if (guardianList == null) {
-                return ResponseEntity.ok(guardians);
+                return new ApiResponse(guardians).send(HttpStatus.OK);
             }
             guardians.setGuardians(guardianList);
-            return ResponseEntity.ok(guardians);
+            return new ApiResponse(guardians).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getGuardians', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the guardians");
         }
     }
 
     // SecPhone and middle initial are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardian> createGuardian(@RequestBody final Guardian guardian) {
+    public ResponseEntity<ApiResponse> createGuardian(@RequestBody final Guardian guardian) {
         try {
             if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
@@ -96,44 +97,44 @@ public class GuardianController {
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
                     StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'createGuardian': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 Optional<Family> guardianFamily = familyRepository.getFamily(guardian.getFamilyUnitID());
                 if (guardianFamily.isPresent()) {
                     if (!guardianFamily.get().isActive()) {
                         logger.error("Error in 'createGuardian': cannot add a guardian to an inactive family");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot add a guardian to an inactive family");
                     }
                     guardianFamily.get().getGuardians().add(guardian.get_id());
                     Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
                     if (familyResult == null) {
                         logger.error("Error in 'createGuardian': error adding ID to family record");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "Error adding ID to family record");
                     } else {
                         guardian.setActive(true);
                         Guardian guardian1 = guardianRepository.createGuardian(guardian);
                         if (guardian1 == null || guardian1.get_id() == null) {
                             logger.error("Error in 'createGuardian': error creating guardian");
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the guardian");
                         } else {
                             HttpHeaders header = new HttpHeaders();
                             header.add("location", guardian1.get_id());
-                            return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                            return new ApiResponse().send(HttpStatus.CREATED);
                         }
                     }
                 } else {
                     logger.error("Error in 'createGuardian': could not find family associated to guardian");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Cannot find family associated to guardian");
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the guardian");
         }
     }
 
     @PostMapping(value = "enrollGuardian", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardian> enrollGuardian(@RequestBody final Guardian guardian) {
+    public ResponseEntity<ApiResponse> enrollGuardian(@RequestBody final Guardian guardian) {
         try {
             if (guardian == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
@@ -141,28 +142,28 @@ public class GuardianController {
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
                     StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'createGuardian': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 guardian.setActive(true);
                 Guardian guardian1 = guardianRepository.createGuardian(guardian);
                 if (guardian1 == null || guardian1.get_id() == null) {
                     logger.error("Error in 'createGuardian': error enrolling guardian");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while enrolling the guardian");
                 } else {
                     HttpHeaders header = new HttpHeaders();
                     header.add("location", guardian1.get_id());
-                    return new ResponseEntity<Guardian>(null, header, HttpStatus.CREATED);
+                    return new ApiResponse().send(HttpStatus.CREATED);
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the guardian");
         }
     }
 
     // SecPhone and middle initial are not required
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardian> updateGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
+    public ResponseEntity<ApiResponse> updateGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
         try {
             if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
@@ -170,32 +171,32 @@ public class GuardianController {
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
                     StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'updateGuardian': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(guardian.get_id())) {
                 logger.error("Error in 'updateGuardian': id parameter does not match id in guardian");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in guardian");
             } else {
                 Optional<Guardian> guardianOptional = guardianRepository.getGuardian(id);
                 if (!guardianOptional.isPresent()) {
                     logger.error("Error in 'updateGuardian': could not find guardian to update");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Cannot find the guardian you were looking for");
                 } else {
                     if (!guardianOptional.get().isActive()) {
                         logger.error("Error in 'updateGuardian': cannot update an inactive guardian");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot update an inactive guardian");
                     }
                     Guardian result = guardianRepository.updateGuardian(id, guardian);
                     if (result == null) {
                         logger.error("Error in 'updateGuardian': error building guardian");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the guardian");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the guardian");
         }
     }
 
@@ -240,7 +241,7 @@ public class GuardianController {
 //    }
 
     @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Guardian> updateActiveGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
+    public ResponseEntity<ApiResponse> updateActiveGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
         try {
             if (guardian == null || id == null || StringUtils.isBlank(guardian.getFname()) || StringUtils.isBlank(guardian.getLname())
                     || StringUtils.isBlank(guardian.getRelationship()) ||
@@ -248,33 +249,33 @@ public class GuardianController {
                     StringUtils.isBlank(guardian.getFamilyUnitID()) || StringUtils.isBlank(guardian.get_id()) ||
                     StringUtils.isBlank(String.valueOf(guardian.isActive()))) {
                 logger.error("Error in 'updateActiveGuardian': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(guardian.get_id())) {
                 logger.error("Error in 'updateActiveGuardian': id parameter does not match id in guardian");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in guardian");
             } else {
                 Optional<Guardian> guardianOptional = guardianRepository.getGuardian(id);
                 if (!guardianOptional.isPresent()) {
                     logger.error("Error in 'updateActiveGuardian': tried to update a guardian that does not exist");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the guardian you were trying to update");
                 } else {
                     List<Guardian> activeGuardians = guardianRepository.getGuardians(guardianOptional.get().getFamilyUnitID(),  "true");
                     if (guardianOptional.get().isActive() && !guardian.isActive() && activeGuardians.size() == 1) {
                         logger.error("Error in 'updateActiveGuardian': a family must have at least 1 active guardian");
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "A family must have at least 1 active guardian");
                     }
                     Guardian result = guardianRepository.updateActive(id, guardian);
                     if (result == null) {
                         logger.error("Error in 'updateActiveGuardian': error building guardian");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the guardian");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateActiveGuardian', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the guardian");
         }
     }
 }

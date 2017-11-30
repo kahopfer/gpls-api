@@ -54,45 +54,47 @@ public class InvoiceController {
     StudentRepository studentRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Invoices> getInvoices(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
+    public ResponseEntity<ApiResponse> getInvoices(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
                                                 @RequestParam(value = "paid", defaultValue = "", required = false) final String paid) {
         try {
             final Invoices invoices = new Invoices();
             final List<Invoice> invoiceList = invoiceRepository.getInvoices(familyID, paid);
             if (invoiceList == null) {
-                return ResponseEntity.ok(invoices);
+                return new ApiResponse(invoices).send(HttpStatus.OK);
             }
             invoices.setInvoices(invoiceList);
-            return ResponseEntity.ok(invoices);
+            return new ApiResponse(invoices).send(HttpStatus.OK);
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getInvoices', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the invoices");
         }
     }
 
     @GetMapping(value = "{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Invoice> getInvoice(@PathVariable(name = "id") final String id) {
+    public ResponseEntity<ApiResponse> getInvoice(@PathVariable(name = "id") final String id) {
         try {
             final Optional<Invoice> invoice = invoiceRepository.getInvoice(id);
             if (!invoice.isPresent()) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the invoice you were looking for");
             } else {
-                return ResponseEntity.ok(invoice.get());
+                return new ApiResponse(invoice.get()).send(HttpStatus.OK);
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'getInvoice', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while getting the invoice");
         }
     }
 
+    //TODO: add warning if line item is invalid
+    //TODO: block invoices with multiple registration fees
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Invoice> createInvoice(@RequestBody final Invoice invoice) {
+    public ResponseEntity<ApiResponse> createInvoice(@RequestBody final Invoice invoice) {
         try {
             if (invoice == null || invoice.getInvoiceFromDate() == null || invoice.getInvoiceToDate() == null
                     || StringUtils.isBlank(invoice.getFamilyID()) || StringUtils.isBlank(String.valueOf(invoice.isPaid()))
                     || invoice.getInvoiceDate() == null) {
                 logger.error("Error in 'createInvoice': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else {
                 Calendar c = Calendar.getInstance();
                 c.setTime(invoice.getInvoiceFromDate());
@@ -103,14 +105,14 @@ public class InvoiceController {
 
                 if (dayOfWeekFrom != 2 || dayOfWeekTo != 6) {
                     logger.error("Error in 'createInvoice': invoice range must be between a Monday and a Friday");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Invoice range must be between a Monday and a Friday");
                 }
 
                 final List<LineItem> lineItemList = lineItemRepository.getLineItems(invoice.getFamilyID(), null,
                         "notNull", "null", null, invoice.getInvoiceFromDate(), invoice.getInvoiceToDate(), null);
                 if (lineItemList.isEmpty()) {
                     logger.error("Error in 'createInvoice': no line items in given date range");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return new ApiResponse().send(HttpStatus.BAD_REQUEST, "No line items in given date range");
                 }
 
                 BigDecimal totalInvoiceCost = new BigDecimal(0);
@@ -184,7 +186,6 @@ public class InvoiceController {
                                             BigDecimal earlyInFeeTotal = earlyInFee.get(0).getItemValue().multiply(earlyDropOffMinutesBigDecimal);
                                             lineTotalCost = lineTotalCost.add(earlyInFeeTotal);
                                         }
-                                        //TODO: Check for inclusivity
 
                                         long regularBeforeCareMinutes = 0L;
                                         // If the child was checked out before before care ended and after it started
@@ -333,7 +334,7 @@ public class InvoiceController {
                     LineItem result = lineItemRepository.updateLineItem(lineItem.get_id(), lineItem);
                     if (result == null) {
                         logger.error("Error in 'createInvoice': error updating line item");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the line items");
                     } else {
                         totalInvoiceCost = totalInvoiceCost.add(lineItem.getLineTotalCost());
                         invoiceIDList.add(lineItem.get_id());
@@ -381,8 +382,8 @@ public class InvoiceController {
 
                                 LineItem lineItem1 = lineItemRepository.createLineItem(fullMorningWeekDiscount);
                                 if (lineItem1 == null || lineItem1.get_id() == null) {
-                                    logger.error("Error in 'createLineItem': error creating full morning week discount lineItem");
-                                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                                    logger.error("Error in 'createLineItem': error creating full morning week discount line item");
+                                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating a full morning week discount line item");
                                 } else {
                                     lineItemList.add(lineItem1);
                                     totalInvoiceCost = totalInvoiceCost.add(lineItem1.getLineTotalCost());
@@ -411,8 +412,8 @@ public class InvoiceController {
 
                                 LineItem lineItem1 = lineItemRepository.createLineItem(fullAfternoonWeekDiscount);
                                 if (lineItem1 == null || lineItem1.get_id() == null) {
-                                    logger.error("Error in 'createLineItem': error creating full afternoon week discount lineItem");
-                                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                                    logger.error("Error in 'createLineItem': error creating full afternoon week discount line item");
+                                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating a full afternoon week discount line item");
                                 } else {
                                     lineItemList.add(lineItem1);
                                     totalInvoiceCost = totalInvoiceCost.add(lineItem1.getLineTotalCost());
@@ -423,7 +424,7 @@ public class InvoiceController {
                     }
                 } else {
                     logger.error("Error in 'createInvoice': could not find family");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the family");
                 }
 
                 invoice.setLineItemsID(invoiceIDList);
@@ -431,29 +432,29 @@ public class InvoiceController {
                 Invoice invoice1 = invoiceRepository.createInvoice(invoice);
                 if (invoice1 == null || invoice1.get_id() == null) {
                     logger.error("Error in 'createInvoice': error creating invoice");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the invoice");
                 } else {
                     for (LineItem lineItem : lineItemList) {
                         lineItem.setInvoiceID(invoice1.get_id());
                         LineItem result = lineItemRepository.updateLineItem(lineItem.get_id(), lineItem);
                         if (result == null) {
                             logger.error("Error in 'createInvoice': error adding invoice ID to line item");
-                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while adding the invoice ID to a line item");
                         }
                     }
                     HttpHeaders header = new HttpHeaders();
                     header.add("location", invoice1.get_id());
-                    return new ResponseEntity<Invoice>(null, header, HttpStatus.CREATED);
+                    return new ApiResponse().send(HttpStatus.CREATED);
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'createInvoice', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while creating the invoice");
         }
     }
 
     @PutMapping(value = "{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Invoice> updateInvoice(@PathVariable(name = "id") final String id, @RequestBody final Invoice invoice) {
+    public ResponseEntity<ApiResponse> updateInvoice(@PathVariable(name = "id") final String id, @RequestBody final Invoice invoice) {
         try {
             if (invoice == null || id == null || invoice.getInvoiceFromDate() == null || invoice.getInvoiceToDate() == null
                     || StringUtils.isBlank(invoice.getFamilyID()) || StringUtils.isBlank(String.valueOf(invoice.isPaid()))
@@ -461,39 +462,39 @@ public class InvoiceController {
                     || invoice.getTotalCost() == null || StringUtils.isBlank(String.valueOf(invoice.getTotalCost()))
                     || invoice.getInvoiceDate() == null) {
                 logger.error("Error in 'updateInvoice': missing required field");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (!id.equals(invoice.get_id())) {
                 logger.error("Error in 'updateInvoice': id parameter does not match id in invoice");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in invoice");
             } else {
                 Optional<Invoice> invoiceOptional = invoiceRepository.getInvoice(id);
                 if (!invoiceOptional.isPresent()) {
                     logger.error("Error in 'updateInvoice': could not find invoice to update");
-                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the invoice you were trying to update");
                 } else {
                     Invoice result = invoiceRepository.updateInvoice(id, invoice);
                     if (result == null) {
                         logger.error("Error in 'updateInvoice': error building invoice");
-                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the invoice");
                     } else {
-                        return ResponseEntity.status(HttpStatus.OK).body(null);
+                        return new ApiResponse().send(HttpStatus.OK);
                     }
                 }
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'updateInvoice', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the invoice");
         }
     }
 
     @DeleteMapping(value = "{id}")
-    public ResponseEntity<Void> deleteInvoice(@PathVariable(name = "id") final String id) {
+    public ResponseEntity<ApiResponse> deleteInvoice(@PathVariable(name = "id") final String id) {
         try {
             Optional<Invoice> invoice = invoiceRepository.getInvoice(id);
             if (invoice.isPresent()) {
                 if (!invoice.get().isPaid()) {
                     logger.error("Error in 'deleteInvoice': cannot delete an unpaid invoice");
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+                    return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot delete an unpaid invoice");
                 }
                 for (String lineItemID : invoice.get().getLineItemsID()) {
                     Optional<LineItem> lineItemToDelete = lineItemRepository.getLineItem(lineItemID);
@@ -502,17 +503,17 @@ public class InvoiceController {
                 Invoice result = invoiceRepository.deleteInvoice(invoice.get());
                 if (result == null) {
                     logger.error("Error in 'deleteInvoice': error deleting invoice");
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                    return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting the invoice");
                 } else {
-                    return ResponseEntity.status(HttpStatus.OK).body(null);
+                    return new ApiResponse().send(HttpStatus.OK);
                 }
             } else {
                 logger.error("Error in 'deleteInvoice': invoice is null");
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                return new ApiResponse().send(HttpStatus.NOT_FOUND, "An error occurred while deleting the invoice");
             }
         } catch (final Exception e) {
             logger.error("Caught " + e + " in 'deleteInvoice', " + e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while deleting the invoice");
         }
     }
 
