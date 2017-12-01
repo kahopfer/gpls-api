@@ -85,8 +85,6 @@ public class InvoiceController {
         }
     }
 
-    //TODO: add warning if line item is invalid
-    //TODO: block invoices with multiple registration fees
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> createInvoice(@RequestBody final Invoice invoice) {
         try {
@@ -120,6 +118,54 @@ public class InvoiceController {
                 List<String> invoiceIDList = new ArrayList<>();
                 List<LineItem> beforeCareFullMorningLineItems = new ArrayList<>();
                 List<LineItem> afterCareFullAfternoonLineItems = new ArrayList<>();
+
+                int weekendLineItems = 0;
+                int differentDayLineItems = 0;
+                int checkInAfterCheckOut = 0;
+                for (LineItem lineItem : lineItemList) {
+                    if (lineItem.getServiceType().equals("Child Care")) {
+                        Calendar checkInCalendar = Calendar.getInstance();
+                        checkInCalendar.setTime(lineItem.getCheckIn());
+                        int dayOfWeekCheckIn = checkInCalendar.get(Calendar.DAY_OF_WEEK);
+
+                        Calendar checkOutCalendar = Calendar.getInstance();
+                        checkOutCalendar.setTime(lineItem.getCheckOut());
+                        int dayOfWeekCheckOut = checkOutCalendar.get(Calendar.DAY_OF_WEEK);
+
+                        if (dayOfWeekCheckIn == 1 || dayOfWeekCheckIn == 7 || dayOfWeekCheckOut == 1 || dayOfWeekCheckOut == 7) {
+                            weekendLineItems++;
+                        } else {
+                            if (!(DateUtils.isSameDay(lineItem.getCheckIn(), lineItem.getCheckOut()))) {
+                                differentDayLineItems++;
+                            }
+                            if (!(lineItem.getCheckIn().before(lineItem.getCheckOut()))) {
+                                checkInAfterCheckOut++;
+                            }
+                        }
+                    }
+                }
+                if (weekendLineItems > 0 || differentDayLineItems > 0 || checkInAfterCheckOut > 0) {
+                    // First get family
+                    Optional<Family> family = familyRepository.getFamily(invoice.getFamilyID());
+                    if (family.isPresent()) {
+                        String errorMessage = "Could not create the invoice for the " + family.get().getFamilyName() + " family.";
+                        if (weekendLineItems > 0) {
+                            errorMessage += " Found " + weekendLineItems + " line items on the weekend.";
+                        }
+                        if (differentDayLineItems > 0) {
+                            errorMessage += " Found " + differentDayLineItems + " line items spanning multiple days.";
+                        }
+                        if (checkInAfterCheckOut > 0) {
+                            errorMessage += " Found " + checkInAfterCheckOut + " line items with a sign in time later than the sign out time.";
+                        }
+                        logger.error("Error in 'createInvoice': " + errorMessage);
+                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, errorMessage);
+                    } else {
+                        logger.error("Error in 'createInvoice': could not find family");
+                        return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the family");
+                    }
+                }
+
                 for (LineItem lineItem : lineItemList) {
                     BigDecimal lineTotalCost = new BigDecimal(0);
 
@@ -340,7 +386,6 @@ public class InvoiceController {
                         invoiceIDList.add(lineItem.get_id());
                     }
                 }
-                // TODO: Make sure this works if student has two line items in the same day
 
                 // First get family
                 Optional<Family> family = familyRepository.getFamily(invoice.getFamilyID());
@@ -517,16 +562,21 @@ public class InvoiceController {
         }
     }
 
-    // TODO: Remove duplicates
     private int checkForFullWeekDiscount(List<Date> dates) {
-        Collections.sort(dates);
+        List<Date> trimmedDates = new ArrayList<>();
+        for (Date date: dates) {
+            trimmedDates.add(trimDate(date));
+        }
+        List<Date> datesWithoutDuplicates = new ArrayList<>(new HashSet<>(trimmedDates));
+
+        Collections.sort(datesWithoutDuplicates);
         int consecutiveDates = 0;
         int numberOfFullWeeks = 0;
         Date last = null;
         Calendar c = Calendar.getInstance();
 
-        for (int i = 0; i < dates.size(); i++) {
-            c.setTime(dates.get(i));
+        for (int i = 0; i < datesWithoutDuplicates.size(); i++) {
+            c.setTime(datesWithoutDuplicates.get(i));
             c.set(Calendar.HOUR_OF_DAY, 0);
             c.set(Calendar.MINUTE, 0);
             c.set(Calendar.SECOND, 0);
@@ -542,7 +592,7 @@ public class InvoiceController {
                 numberOfFullWeeks++;
             }
             Calendar lastCalendar = Calendar.getInstance();
-            lastCalendar.setTime(dates.get(i));
+            lastCalendar.setTime(datesWithoutDuplicates.get(i));
             lastCalendar.set(Calendar.HOUR_OF_DAY, 0);
             lastCalendar.set(Calendar.MINUTE, 0);
             lastCalendar.set(Calendar.SECOND, 0);
@@ -551,5 +601,15 @@ public class InvoiceController {
         }
 
         return numberOfFullWeeks;
+    }
+
+    private Date trimDate(Date date) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(date);
+        c.set(Calendar.HOUR, 0);
+        c.set(Calendar.MINUTE, 0);
+        c.set(Calendar.SECOND, 0);
+        c.set(Calendar.HOUR_OF_DAY, 0);
+        return c.getTime();
     }
 }

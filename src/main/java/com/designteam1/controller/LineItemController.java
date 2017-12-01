@@ -42,13 +42,13 @@ public class LineItemController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> getLineItems(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
-                                                  @RequestParam(value = "studentID", defaultValue = "", required = false) final String studentID,
-                                                  @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
-                                                  @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced,
-                                                  @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType,
-                                                  @RequestParam(value = "invoiceID", defaultValue = "", required = false) final String invoiceID,
-                                                  @RequestParam(value = "fromDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate fromDate,
-                                                  @RequestParam(value = "toDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate toDate) {
+                                                    @RequestParam(value = "studentID", defaultValue = "", required = false) final String studentID,
+                                                    @RequestParam(value = "checkedOut", defaultValue = "", required = false) final String checkedOut,
+                                                    @RequestParam(value = "invoiced", defaultValue = "", required = false) final String invoiced,
+                                                    @RequestParam(value = "serviceType", defaultValue = "", required = false) final String serviceType,
+                                                    @RequestParam(value = "invoiceID", defaultValue = "", required = false) final String invoiceID,
+                                                    @RequestParam(value = "fromDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate fromDate,
+                                                    @RequestParam(value = "toDate", required = false, defaultValue = "") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDate toDate) {
         try {
             Date fromDate1 = null;
             Date toDate1 = null;
@@ -105,7 +105,7 @@ public class LineItemController {
                 logger.error("Error in 'updateLineItem': id parameter does not match id in lineItem");
                 return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in line item");
             } else {
-                List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, null, null, null);
+                List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Child Care", null, null, null);
                 if (currentLineItems != null && !currentLineItems.isEmpty()) {
                     for (LineItem lineItem1 : currentLineItems) {
                         if (!(lineItem.get_id().equals(lineItem1.get_id()))) {
@@ -114,6 +114,13 @@ public class LineItemController {
                                 return new ApiResponse().send(HttpStatus.CONFLICT, "Time is overlapping with existing line item");
                             }
                         }
+                    }
+                }
+                if (lineItem.getServiceType().equals("Annual Registration Fee")) {
+                    List<LineItem> annualRegistrationFees = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Annual Registration Fee", null, null, null);
+                    if (annualRegistrationFees.size() > 0) {
+                        logger.error("Error in 'updateLineItem': cannot have more than one annual registration fee in an invoice");
+                        return new ApiResponse().send(HttpStatus.CONFLICT, "Cannot have more than one annual registration fee in an invoice");
                     }
                 }
                 Optional<LineItem> lineItemOptional = lineItemRepository.getLineItem(id);
@@ -151,17 +158,23 @@ public class LineItemController {
                 logger.error("Error in 'createLineItem': check in time is later than check out time");
                 return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Check in time is later than check out time");
             } else {
-                if (lineItem.getCheckOut() != null) {
-                    List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", null, null, null, null);
-                    if (currentLineItems != null && !currentLineItems.isEmpty()) {
-                        for (LineItem lineItem1 : currentLineItems) {
-                            if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
-                                logger.error("Error in 'createLineItem': time is overlapping with existing line item");
-                                return new ApiResponse().send(HttpStatus.CONFLICT, "Time is overlapping with existing line item");
-                            }
+                List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Child Care", null, null, null);
+                if (currentLineItems != null && !currentLineItems.isEmpty()) {
+                    for (LineItem lineItem1 : currentLineItems) {
+                        if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
+                            logger.error("Error in 'createLineItem': time is overlapping with existing line item");
+                            return new ApiResponse().send(HttpStatus.CONFLICT, "Time is overlapping with existing line item");
                         }
                     }
                 }
+                if (lineItem.getServiceType().equals("Annual Registration Fee")) {
+                    List<LineItem> annualRegistrationFees = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Annual Registration Fee", null, null, null);
+                    if (annualRegistrationFees.size() > 0) {
+                        logger.error("Error in 'createLineItem': cannot have more than one annual registration fee in an invoice");
+                        return new ApiResponse().send(HttpStatus.CONFLICT, "Cannot have more than one annual registration fee in an invoice");
+                    }
+                }
+
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
                 if (lineItem1 == null || lineItem1.get_id() == null) {
                     logger.error("Error in 'createLineItem': error creating lineItem");
@@ -209,6 +222,9 @@ public class LineItemController {
         // If the student is currently signed in, they will not have a sign out time yet
         if (end2 == null) {
             end2 = new Date();
+        }
+        if (end1 == null) {
+            end1 = new Date();
         }
         return start1.before(end2) && start2.before(end1);
     }
