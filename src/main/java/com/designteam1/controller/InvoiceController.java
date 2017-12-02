@@ -122,6 +122,7 @@ public class InvoiceController {
                 int weekendLineItems = 0;
                 int differentDayLineItems = 0;
                 int checkInAfterCheckOut = 0;
+                int morningAndAfternoonLineItems = 0;
                 for (LineItem lineItem : lineItemList) {
                     if (lineItem.getServiceType().equals("Child Care")) {
                         Calendar checkInCalendar = Calendar.getInstance();
@@ -137,14 +138,21 @@ public class InvoiceController {
                         } else {
                             if (!(DateUtils.isSameDay(lineItem.getCheckIn(), lineItem.getCheckOut()))) {
                                 differentDayLineItems++;
-                            }
-                            if (!(lineItem.getCheckIn().before(lineItem.getCheckOut()))) {
+                            } else if (!(lineItem.getCheckIn().before(lineItem.getCheckOut()))) {
                                 checkInAfterCheckOut++;
+                            } else {
+                                int checkInTime = (checkInCalendar.get(Calendar.HOUR_OF_DAY) * 10000) + (checkInCalendar.get(Calendar.MINUTE) * 100) + checkInCalendar.get(Calendar.SECOND);
+                                int checkOutTime = (checkOutCalendar.get(Calendar.HOUR_OF_DAY) * 10000) + (checkOutCalendar.get(Calendar.MINUTE) * 100) + checkOutCalendar.get(Calendar.SECOND);
+                                if (checkInTime >= 120000 || checkOutTime > 120000) {
+                                    if (checkInTime < 120000 || checkOutTime <= 120000) {
+                                        morningAndAfternoonLineItems++;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                if (weekendLineItems > 0 || differentDayLineItems > 0 || checkInAfterCheckOut > 0) {
+                if (weekendLineItems > 0 || differentDayLineItems > 0 || checkInAfterCheckOut > 0 || morningAndAfternoonLineItems > 0) {
                     // First get family
                     Optional<Family> family = familyRepository.getFamily(invoice.getFamilyID());
                     if (family.isPresent()) {
@@ -157,6 +165,9 @@ public class InvoiceController {
                         }
                         if (checkInAfterCheckOut > 0) {
                             errorMessage += " Found " + checkInAfterCheckOut + " line items with a sign in time later than the sign out time.";
+                        }
+                        if (morningAndAfternoonLineItems > 0) {
+                            errorMessage += " Found " + morningAndAfternoonLineItems + " line items that were both in the morning and afternoon.";
                         }
                         logger.error("Error in 'createInvoice': " + errorMessage);
                         return new ApiResponse().send(HttpStatus.BAD_REQUEST, errorMessage);
