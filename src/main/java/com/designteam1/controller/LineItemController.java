@@ -167,7 +167,7 @@ public class LineItemController {
                         }
                     }
                 }
-                if (lineItem.getServiceType().equals("Annual Registration Fee")) {
+                if (lineItem.getServiceType() != null && lineItem.getServiceType().equals("Annual Registration Fee")) {
                     List<LineItem> annualRegistrationFees = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Annual Registration Fee", null, null, null);
                     if (annualRegistrationFees.size() > 0) {
                         logger.error("Error in 'createLineItem': cannot have more than one annual registration fee in an invoice");
