@@ -1,10 +1,11 @@
 package com.designteam1.controller;
 
-import com.designteam1.helpers.LineItemHelpers;
 import com.designteam1.model.ApiResponse;
 import com.designteam1.model.LineItem;
 import com.designteam1.model.LineItems;
+import com.designteam1.model.Student;
 import com.designteam1.repository.LineItemRepository;
+import com.designteam1.repository.StudentRepository;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +32,16 @@ public class LineItemController {
 
     }
 
-    public LineItemController(final LineItemRepository lineItemRepository) {
+    public LineItemController(final LineItemRepository lineItemRepository, final StudentRepository studentRepository) {
         this.lineItemRepository = lineItemRepository;
+        this.studentRepository = studentRepository;
     }
 
     @Autowired
     LineItemRepository lineItemRepository;
 
-    private LineItemHelpers lineItemHelpers = new LineItemHelpers();
+    @Autowired
+    StudentRepository studentRepository;
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> getLineItems(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
@@ -128,6 +131,28 @@ public class LineItemController {
                     logger.error("Error in 'updateLineItem': could not find line item to update");
                     return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the line item you were trying to update");
                 } else {
+                    if (lineItemOptional.get().getCheckOut() == null) {
+                        Optional<Student> studentOptional = studentRepository.getStudent(lineItem.getStudentID());
+                        if (!studentOptional.isPresent()) {
+                            logger.error("Error in 'updateLineItem': tried to check out a student that does not exist");
+                            return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to sign out");
+                        } else {
+                            if (!studentOptional.get().isActive()) {
+                                logger.error("Error in 'updateLineItem': cannot check out an inactive student");
+                                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot sign out an inactive student");
+                            }
+                            if (!studentOptional.get().isCheckedIn()) {
+                                logger.error("Error in 'createLineItem': student is already checked out");
+                                return new ApiResponse().send(HttpStatus.BAD_REQUEST, studentOptional.get().getFname() + " " + studentOptional.get().getLname() + " is already signed out");
+                            }
+                            studentOptional.get().setCheckedIn(false);
+                            Student result = studentRepository.updateCheckedIn(lineItem.getStudentID(), studentOptional.get());
+                            if (result == null) {
+                                logger.error("Error in 'updateLineItem': error building student");
+                                return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while signing out the student");
+                            }
+                        }
+                    }
                     LineItem result = lineItemRepository.updateLineItem(id, lineItem);
                     if (result == null) {
                         logger.error("Error in 'updateLineItem': error building lineItem");
@@ -143,7 +168,7 @@ public class LineItemController {
         }
     }
 
-    // checkOut, checkOutBy, serviceType, notes, and invoiceID are not required
+    // checkOut, checkOutBy, notes, and invoiceID are not required
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> createLineItem(@RequestBody final LineItem lineItem) {
         try {
@@ -151,7 +176,7 @@ public class LineItemController {
                     || StringUtils.isBlank(String.valueOf(lineItem.isExtraItem())) || lineItem.getCheckIn() == null || StringUtils.isBlank(lineItem.getCheckInBy())
                     || (lineItem.isExtraItem() && StringUtils.isBlank(lineItem.getServiceType())) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getCheckOutBy()))
                     || (StringUtils.isNotBlank(lineItem.getCheckOutBy()) && lineItem.getCheckOut() == null) || (lineItem.getCheckOut() != null && StringUtils.isBlank(lineItem.getServiceType()))
-                    || StringUtils.isBlank(String.valueOf(lineItem.getLineTotalCost())) || StringUtils.isBlank(String.valueOf(lineItem.getEarlyInLateOutFee()))) {
+                    || StringUtils.isBlank(String.valueOf(lineItem.getLineTotalCost())) || StringUtils.isBlank(String.valueOf(lineItem.getEarlyInLateOutFee())) || StringUtils.isBlank(lineItem.getServiceType())) {
                 logger.error("Error in 'createLineItem': missing required field");
                 return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
             } else if (lineItem.getCheckOut() != null && lineItem.getCheckIn().after(lineItem.getCheckOut())) {
@@ -174,7 +199,28 @@ public class LineItemController {
                         return new ApiResponse().send(HttpStatus.CONFLICT, "Cannot have more than one annual registration fee in an invoice");
                     }
                 }
-
+                if (lineItem.getCheckOut() == null) {
+                    Optional<Student> studentOptional = studentRepository.getStudent(lineItem.getStudentID());
+                    if (!studentOptional.isPresent()) {
+                        logger.error("Error in 'createLineItem': tried to check in/out a student that does not exist");
+                        return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to sign in");
+                    } else {
+                        if (!studentOptional.get().isActive()) {
+                            logger.error("Error in 'createLineItem': cannot check in an inactive student");
+                            return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot sign in an inactive student");
+                        }
+                        if (studentOptional.get().isCheckedIn()) {
+                            logger.error("Error in 'createLineItem': student is already checked in");
+                            return new ApiResponse().send(HttpStatus.BAD_REQUEST, studentOptional.get().getFname() + " " + studentOptional.get().getLname() + " is already signed in.");
+                        }
+                        studentOptional.get().setCheckedIn(true);
+                        Student result = studentRepository.updateCheckedIn(lineItem.getStudentID(), studentOptional.get());
+                        if (result == null) {
+                            logger.error("Error in 'createLineItem': error building student");
+                            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while signing in the student");
+                        }
+                    }
+                }
                 LineItem lineItem1 = lineItemRepository.createLineItem(lineItem);
                 if (lineItem1 == null || lineItem1.get_id() == null) {
                     logger.error("Error in 'createLineItem': error creating lineItem");
@@ -221,10 +267,10 @@ public class LineItemController {
     private static boolean isOverlapping(Date start1, Date end1, Date start2, Date end2) {
         // If the student is currently signed in, they will not have a sign out time yet
         if (end2 == null) {
-            end2 = new Date();
+            return start1.after(start2) || end1.after(start2);
         }
         if (end1 == null) {
-            end1 = new Date();
+            return start2.after(start1) || end2.after(start1);
         }
         return start1.before(end2) && start2.before(end1);
     }

@@ -199,41 +199,41 @@ public class StudentController {
         }
     }
 
-    @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<ApiResponse> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
-        try {
-            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
-                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
-                logger.error("Error in 'updateCheckedIn': missing required field");
-                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
-            } else if (!id.equals(student.get_id())) {
-                logger.error("Error in 'updateCheckedIn': id parameter does not match id in student");
-                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
-            } else {
-                Optional<Student> studentOptional = studentRepository.getStudent(id);
-                if (!studentOptional.isPresent()) {
-                    logger.error("Error in 'updateCheckedIn': tried to check in/out a student that does not exist");
-                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to check in/out");
-                } else {
-                    if (!studentOptional.get().isActive()) {
-                        logger.error("Error in 'updateCheckedIn': cannot check in an inactive student");
-                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot check in an inactive student");
-                    }
-                    Student result = studentRepository.updateCheckedIn(id, student);
-                    if (result == null) {
-                        logger.error("Error in 'updateCheckedIn': error building student");
-                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
-                    } else {
-                        return new ApiResponse().send(HttpStatus.OK);
-                    }
-                }
-            }
-        } catch (final Exception e) {
-            logger.error("Caught " + e + " in 'updateCheckedIn', " + e);
-            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
-        }
-    }
+//    @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+//    public ResponseEntity<ApiResponse> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
+//        try {
+//            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
+//                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
+//                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
+//                logger.error("Error in 'updateCheckedIn': missing required field");
+//                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
+//            } else if (!id.equals(student.get_id())) {
+//                logger.error("Error in 'updateCheckedIn': id parameter does not match id in student");
+//                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
+//            } else {
+//                Optional<Student> studentOptional = studentRepository.getStudent(id);
+//                if (!studentOptional.isPresent()) {
+//                    logger.error("Error in 'updateCheckedIn': tried to check in/out a student that does not exist");
+//                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to check in/out");
+//                } else {
+//                    if (!studentOptional.get().isActive()) {
+//                        logger.error("Error in 'updateCheckedIn': cannot check in an inactive student");
+//                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot check in an inactive student");
+//                    }
+//                    Student result = studentRepository.updateCheckedIn(id, student);
+//                    if (result == null) {
+//                        logger.error("Error in 'updateCheckedIn': error building student");
+//                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
+//                    } else {
+//                        return new ApiResponse().send(HttpStatus.OK);
+//                    }
+//                }
+//            }
+//        } catch (final Exception e) {
+//            logger.error("Caught " + e + " in 'updateCheckedIn', " + e);
+//            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
+//        }
+//    }
 
 //    @DeleteMapping(value = "{id}")
 //    public ResponseEntity<Void> deleteStudent(@PathVariable(name = "id") final String id) {
