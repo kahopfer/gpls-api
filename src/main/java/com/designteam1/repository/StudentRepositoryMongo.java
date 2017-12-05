@@ -3,7 +3,6 @@ package com.designteam1.repository;
 import com.designteam1.model.Student;
 import com.mongodb.WriteResult;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -49,7 +48,6 @@ public class StudentRepositoryMongo implements StudentRepository {
 
     @Override
     public Student createStudent(Student student) {
-//        student.set_id(null);
         mt.save(student, collectionName);
         return student;
     }
@@ -62,7 +60,6 @@ public class StudentRepositoryMongo implements StudentRepository {
         update.set("fname", student.getFname());
         update.set("lname", student.getLname());
         update.set("mi", student.getMi());
-//        update.set("birthdate", student.getBirthdate());
         update.set("notes", student.getNotes());
         update.set("familyUnitID", student.getFamilyUnitID());
 

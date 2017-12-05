@@ -200,46 +200,6 @@ public class GuardianController {
         }
     }
 
-//    @DeleteMapping(value = "{id}")
-//    public ResponseEntity<Void> deleteGuardian(@PathVariable(name = "id") final String id) {
-//        try {
-//            Optional<Guardian> guardian = guardianRepository.getGuardian(id);
-//            if (guardian.isPresent()) {
-//                Optional<Family> guardianFamily = familyRepository.getFamily(guardian.get().getFamilyUnitID());
-//                if (guardianFamily.isPresent()) {
-//                    if (guardianFamily.get().getGuardians().size() == 1) {
-//                        logger.error("Error in 'deleteGuardian': a family must have at least 1 guardian");
-//                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//                    }
-//                    // Remove guardianID from family record
-//                    guardianFamily.get().getGuardians().removeIf(s -> s.equals(guardian.get().get_id()));
-//                    Family familyResult = familyRepository.updateFamily(guardianFamily.get().get_id(), guardianFamily.get());
-//                    if (familyResult == null) {
-//                        logger.error("Error in 'deleteGuardian': error updating family record");
-//                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//                    } else {
-//                        Guardian result = guardianRepository.deleteGuardian(guardian.get());
-//                        if (result == null) {
-//                            logger.error("Error in 'deleteGuardian': error deleting guardian");
-//                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//                        } else {
-//                            return ResponseEntity.status(HttpStatus.OK).body(null);
-//                        }
-//                    }
-//                } else {
-//                    logger.error("Error in 'deleteGuardian': cannot find family associated to guardian");
-//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//                }
-//            } else {
-//                logger.error("Error in 'deleteGuardian': guardian is null");
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//            }
-//        } catch (final Exception e) {
-//            logger.error("Caught " + e + " in 'deleteGuardian', " + e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//        }
-//    }
-
     @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> updateActiveGuardian(@PathVariable(name = "id") final String id, @RequestBody final Guardian guardian) {
         try {
@@ -259,7 +219,7 @@ public class GuardianController {
                     logger.error("Error in 'updateActiveGuardian': tried to update a guardian that does not exist");
                     return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the guardian you were trying to update");
                 } else {
-                    List<Guardian> activeGuardians = guardianRepository.getGuardians(guardianOptional.get().getFamilyUnitID(),  "true");
+                    List<Guardian> activeGuardians = guardianRepository.getGuardians(guardianOptional.get().getFamilyUnitID(), "true");
                     if (guardianOptional.get().isActive() && !guardian.isActive() && activeGuardians.size() == 1) {
                         logger.error("Error in 'updateActiveGuardian': a family must have at least 1 active guardian");
                         return new ApiResponse().send(HttpStatus.BAD_REQUEST, "A family must have at least 1 active guardian");

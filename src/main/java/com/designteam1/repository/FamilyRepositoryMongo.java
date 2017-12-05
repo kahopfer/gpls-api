@@ -41,7 +41,6 @@ public class FamilyRepositoryMongo implements FamilyRepository {
 
     @Override
     public Family createFamily(Family family) {
-//        family.set_id(null);
         mt.save(family, collectionName);
         return family;
     }

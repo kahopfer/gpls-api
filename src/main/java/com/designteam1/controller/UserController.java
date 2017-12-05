@@ -118,10 +118,9 @@ public class UserController {
         }
     }
 
-    //TODO: Make sure this logic is sound
     @PutMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> changePassword(@RequestHeader("Old-Password") final String oldPassword,
-                                               @RequestBody final User user, @RequestHeader("Authorization") String authToken) {
+                                                      @RequestBody final User user, @RequestHeader("Authorization") String authToken) {
         try {
             // No need to check for auth token. API will automatically return a 401 if it is not provided in the request header
             if (authToken.startsWith("Bearer ")) {
@@ -174,7 +173,7 @@ public class UserController {
             if (user == null || userToUpdate == null || StringUtils.isBlank(user.getUsername()) || StringUtils.isBlank(user.getPassword())) {
                 logger.error("Error in 'resetPassword': missing required field");
                 return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
-            } else if(!userToUpdate.equals(user.getUsername())) {
+            } else if (!userToUpdate.equals(user.getUsername())) {
                 logger.error("Error in 'resetPassword': username parameter does not match username in user");
                 return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Username password does not match username in user");
             } else if (yourUsername.equals(userToUpdate)) {

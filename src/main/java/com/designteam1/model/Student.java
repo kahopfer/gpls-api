@@ -1,13 +1,10 @@
 package com.designteam1.model;
 
-import java.util.Date;
-
 public class Student {
     private String _id;
     private String fname;
     private String lname;
     private String mi;
-//    private Date birthdate;
     private String notes;
     private boolean checkedIn;
     private String familyUnitID;
@@ -44,14 +41,6 @@ public class Student {
     public void setMi(String mi) {
         this.mi = mi;
     }
-
-//    public Date getBirthdate() {
-//        return birthdate;
-//    }
-//
-//    public void setBirthdate(Date birthdate) {
-//        this.birthdate = birthdate;
-//    }
 
     public String getFamilyUnitID() {
         return familyUnitID;

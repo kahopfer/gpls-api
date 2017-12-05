@@ -45,7 +45,7 @@ public class StudentController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> getStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
-                                                @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
+                                                   @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
             final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "true");
@@ -77,7 +77,7 @@ public class StudentController {
 
     @GetMapping(value = "/inactive", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> getInactiveStudents(@RequestParam(value = "familyUnitID", defaultValue = "", required = false) final String familyUnitID,
-                                                        @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
+                                                           @RequestParam(value = "checkedIn", defaultValue = "", required = false) final String checkedIn) {
         try {
             final Students students = new Students();
             final List<Student> studentList = studentRepository.getStudents(familyUnitID, checkedIn, "false");
@@ -198,88 +198,6 @@ public class StudentController {
             return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while updating the student");
         }
     }
-
-//    @PutMapping(value = "updateCheckedIn/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-//    public ResponseEntity<ApiResponse> updateCheckedIn(@PathVariable(name = "id") final String id, @RequestBody final Student student) {
-//        try {
-//            if (student == null || id == null || StringUtils.isBlank(student.getFname()) || StringUtils.isBlank(student.getLname())
-//                    || StringUtils.isBlank(student.getFamilyUnitID()) || StringUtils.isBlank(student.get_id()) ||
-//                    StringUtils.isBlank(String.valueOf(student.isActive())) || StringUtils.isBlank(String.valueOf(student.isCheckedIn()))) {
-//                logger.error("Error in 'updateCheckedIn': missing required field");
-//                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Missing a required field");
-//            } else if (!id.equals(student.get_id())) {
-//                logger.error("Error in 'updateCheckedIn': id parameter does not match id in student");
-//                return new ApiResponse().send(HttpStatus.BAD_REQUEST, "ID parameter does not match ID in student");
-//            } else {
-//                Optional<Student> studentOptional = studentRepository.getStudent(id);
-//                if (!studentOptional.isPresent()) {
-//                    logger.error("Error in 'updateCheckedIn': tried to check in/out a student that does not exist");
-//                    return new ApiResponse().send(HttpStatus.NOT_FOUND, "Could not find the student you were trying to check in/out");
-//                } else {
-//                    if (!studentOptional.get().isActive()) {
-//                        logger.error("Error in 'updateCheckedIn': cannot check in an inactive student");
-//                        return new ApiResponse().send(HttpStatus.BAD_REQUEST, "Cannot check in an inactive student");
-//                    }
-//                    Student result = studentRepository.updateCheckedIn(id, student);
-//                    if (result == null) {
-//                        logger.error("Error in 'updateCheckedIn': error building student");
-//                        return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
-//                    } else {
-//                        return new ApiResponse().send(HttpStatus.OK);
-//                    }
-//                }
-//            }
-//        } catch (final Exception e) {
-//            logger.error("Caught " + e + " in 'updateCheckedIn', " + e);
-//            return new ApiResponse().send(HttpStatus.INTERNAL_SERVER_ERROR, "An error occurred while checking in/out the student");
-//        }
-//    }
-
-//    @DeleteMapping(value = "{id}")
-//    public ResponseEntity<Void> deleteStudent(@PathVariable(name = "id") final String id) {
-//        try {
-//            Optional<Student> student = studentRepository.getStudent(id);
-//            if (student.isPresent()) {
-//                Optional<Family> studentFamily = familyRepository.getFamily(student.get().getFamilyUnitID());
-//                if (studentFamily.isPresent()) {
-//                    if (studentFamily.get().getStudents().size() == 1) {
-//                        logger.error("Error in 'deleteStudent': a family must have at least 1 child");
-//                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//                    }
-//                    List<LineItem> uninvoicedLineItems = lineItemRepository.getLineItems(null, student.get().get_id(),
-//                            null, "null", null, null, null, null);
-//                    if (uninvoicedLineItems.size() > 0) {
-//                        logger.error("Error in 'deleteStudent': you cannot delete a student with uninvoiced line items");
-//                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-//                    }
-//                    // Remove student ID from student array in family
-//                    studentFamily.get().getStudents().removeIf(s -> s.equals(student.get().get_id()));
-//                    Family familyResult = familyRepository.updateFamily(studentFamily.get().get_id(), studentFamily.get());
-//                    if (familyResult == null) {
-//                        logger.error("Error in 'deleteStudent': error updating family record");
-//                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//                    } else {
-//                        Student result = studentRepository.deleteStudent(student.get());
-//                        if (result == null) {
-//                            logger.error("Error in 'deleteStudent': error deleting student");
-//                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//                        } else {
-//                            return ResponseEntity.status(HttpStatus.OK).body(null);
-//                        }
-//                    }
-//                } else {
-//                    logger.error("Error in 'deleteStudent': cannot find family associated to student");
-//                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//                }
-//            } else {
-//                logger.error("Error in 'deleteStudent': student is null");
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-//            }
-//        } catch (final Exception e) {
-//            logger.error("Caught " + e + " in 'deleteStudent', " + e);
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-//        }
-//    }
 
     @PutMapping(value = "/updateActive/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> updateActiveStudent(@PathVariable(name = "id") final String id, @RequestBody final Student student) {

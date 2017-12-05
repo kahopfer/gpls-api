@@ -16,12 +16,12 @@ import java.util.Optional;
 
 @Repository
 public class PriceListRepositoryMongo implements PriceListRepository {
-    
+
     private final String collectionName = "PriceList";
 
     @Autowired
     private MongoTemplate mt;
-    
+
     @Override
     public List<PriceList> getPriceLists(String itemName, String itemExtra) {
         Query query = new Query();

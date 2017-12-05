@@ -3,7 +3,6 @@ package com.designteam1.repository;
 import com.designteam1.model.Guardian;
 import com.mongodb.WriteResult;
 import org.apache.commons.lang3.StringUtils;
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -28,8 +27,6 @@ public class GuardianRepositoryMongo implements GuardianRepository {
         Query query = new Query();
 
         if (StringUtils.isNotEmpty(familyUnitID)) {
-//            ObjectId objID = new ObjectId(familyUnitID);
-//            query.addCriteria(Criteria.where("familyUnitID").is(objID));
             query.addCriteria(Criteria.where("familyUnitID").is(familyUnitID));
         }
         if (StringUtils.isNotEmpty(active)) {
@@ -48,7 +45,6 @@ public class GuardianRepositoryMongo implements GuardianRepository {
 
     @Override
     public Guardian createGuardian(Guardian guardian) {
-//        guardian.set_id(null);
         mt.save(guardian, collectionName);
         return guardian;
     }

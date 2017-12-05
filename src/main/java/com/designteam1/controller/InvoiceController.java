@@ -55,7 +55,7 @@ public class InvoiceController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ApiResponse> getInvoices(@RequestParam(value = "familyID", defaultValue = "", required = false) final String familyID,
-                                                @RequestParam(value = "paid", defaultValue = "", required = false) final String paid) {
+                                                   @RequestParam(value = "paid", defaultValue = "", required = false) final String paid) {
         try {
             final Invoices invoices = new Invoices();
             final List<Invoice> invoiceList = invoiceRepository.getInvoices(familyID, paid);
@@ -575,7 +575,7 @@ public class InvoiceController {
 
     private int checkForFullWeekDiscount(List<Date> dates) {
         List<Date> trimmedDates = new ArrayList<>();
-        for (Date date: dates) {
+        for (Date date : dates) {
             trimmedDates.add(trimDate(date));
         }
         List<Date> datesWithoutDuplicates = new ArrayList<>(new HashSet<>(trimmedDates));
