@@ -112,7 +112,7 @@ public class LineItemController {
                 if (currentLineItems != null && !currentLineItems.isEmpty()) {
                     for (LineItem lineItem1 : currentLineItems) {
                         if (!(lineItem.get_id().equals(lineItem1.get_id()))) {
-                            if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
+                            if (lineItem.getServiceType().equals("Child Care") && isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
                                 logger.error("Error in 'updateLineItem': time is overlapping with existing line item");
                                 return new ApiResponse().send(HttpStatus.CONFLICT, "Time is overlapping with existing line item");
                             }
@@ -186,7 +186,7 @@ public class LineItemController {
                 List<LineItem> currentLineItems = lineItemRepository.getLineItems(lineItem.getFamilyID(), lineItem.getStudentID(), null, "null", "Child Care", null, null, null);
                 if (currentLineItems != null && !currentLineItems.isEmpty()) {
                     for (LineItem lineItem1 : currentLineItems) {
-                        if (isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
+                        if (lineItem.getServiceType().equals("Child Care") && isOverlapping(lineItem.getCheckIn(), lineItem.getCheckOut(), lineItem1.getCheckIn(), lineItem1.getCheckOut())) {
                             logger.error("Error in 'createLineItem': time is overlapping with existing line item");
                             return new ApiResponse().send(HttpStatus.CONFLICT, "Time is overlapping with existing line item");
                         }
